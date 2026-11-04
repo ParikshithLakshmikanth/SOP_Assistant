@@ -110,27 +110,3 @@ logs/
 # 10. Streamlit Secrets & Local Cache
 # ------------------------------------------------------------------------------
 .streamlit/secrets.toml
-
-# ------------------------------------------------------------------------------
-# 11. IDE, Editor & OS-Specific Metadata
-# ------------------------------------------------------------------------------
-# Windows
-Thumbs.db
-ehthumbs.db
-[Dd]esktop.ini
-$RECYCLE.BIN/
-
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-
-# Linux
-*~
-
-# IDEs
-.idea/
-.vscode/
-*.swp
-*.swo
-

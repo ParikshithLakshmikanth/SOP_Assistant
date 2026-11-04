@@ -1,1 +1,3 @@
-FROM ./nomic-embed-text-v1.5.Q4_K_M.gguf
+version https://git-lfs.github.com/spec/v1
+oid sha256:379dbbd513777c235843b6ae7db5a0f82b94150d1634c898e1bd3ec3e29e31b4
+size 42
