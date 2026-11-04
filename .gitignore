@@ -1,0 +1,136 @@
+# ==============================================================================
+# .gitignore — Intelligent SOP Document Intelligence & Revision Impact Assistant
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Python Bytecode, Caching & Compilation
+# ------------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ------------------------------------------------------------------------------
+# 2. Virtual Environments
+# ------------------------------------------------------------------------------
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# ------------------------------------------------------------------------------
+# 3. Offline Package Wheels
+# ------------------------------------------------------------------------------
+pkgwhl/
+*.whl
+
+# ------------------------------------------------------------------------------
+# 4. Large AI Models, Weights & Checkpoints (>100MB binaries)
+# ------------------------------------------------------------------------------
+# Ignore large GGUF / model weight files to prevent exceeding Git / GitHub limits
+models/*.gguf
+*.gguf
+*.bin
+*.pt
+*.pth
+*.safetensors
+*.onnx
+
+# Explicitly track lightweight Ollama Modelfile descriptors
+!models/ModelFile*
+
+# ------------------------------------------------------------------------------
+# 5. Local Databases & Runtime Persistence
+# ------------------------------------------------------------------------------
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+data/*.db
+data/**/*.db
+
+# ------------------------------------------------------------------------------
+# 6. Upload Staging & Document Intake
+# ------------------------------------------------------------------------------
+# Keep directory structure via .gitkeep, but ignore user-uploaded PDFs at runtime
+data/documents/*
+!data/documents/.gitkeep
+
+# ------------------------------------------------------------------------------
+# 7. FAISS Binary Vector Indices
+# ------------------------------------------------------------------------------
+# Generated / platform-dependent binary vector index files (rebuilt via rag_engine)
+*.index
+data/faiss_index/*.index
+
+# ------------------------------------------------------------------------------
+# 8. Testing Artifacts, Temporary Sandboxes & Coverage
+# ------------------------------------------------------------------------------
+data/test_*
+test_sandbox*/
+.cache/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+
+# ------------------------------------------------------------------------------
+# 9. Logs & Runtime Diagnostics
+# ------------------------------------------------------------------------------
+*.log
+logs/
+*.pid
+
+# ------------------------------------------------------------------------------
+# 10. Streamlit Secrets & Local Cache
+# ------------------------------------------------------------------------------
+.streamlit/secrets.toml
+
+# ------------------------------------------------------------------------------
+# 11. IDE, Editor & OS-Specific Metadata
+# ------------------------------------------------------------------------------
+# Windows
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
