@@ -93,6 +93,48 @@ st.markdown("""
     .stChatFloatingInputContainer {
         bottom: 20px;
     }
+
+    /* ChatGPT / Gemini Style Smooth Streaming Response & Typing Cursor */
+    .typing-cursor {
+        display: inline-block;
+        width: 2.5px;
+        height: 1.15em;
+        background-color: #1E3A8A;
+        margin-left: 2px;
+        margin-right: 1px;
+        vertical-align: -0.15em;
+        border-radius: 1px;
+        animation: cursorBlink 0.75s ease-in-out infinite;
+    }
+    @keyframes cursorBlink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0; }
+    }
+    .streaming-fade-in {
+        display: inline;
+        animation: textFadeIn 0.2s ease-out forwards;
+    }
+    @keyframes textFadeIn {
+        from {
+            opacity: 0.25;
+            transform: translateY(1px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .typing-cursor {
+            animation: none !important;
+            opacity: 1 !important;
+        }
+        .streaming-fade-in {
+            animation: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+        }
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -311,6 +353,127 @@ def render_compact_evidence_sources(citations_list: List[Dict[str, Any]]):
                         st.markdown(f"- **Section:** {short_sec}")
             else:
                 st.markdown(label)
+
+
+# ============================================================================
+# STREAMING RENDERING HELPERS (SMOOTH PROGRESSIVE DISPLAY)
+# ============================================================================
+
+def render_streaming_display(stable_text: str, latest_chunk: str, is_active: bool = True) -> str:
+    """
+    Constructs progressive streaming Markdown / HTML display:
+    - stable_text: Established accumulated text, rendered statically without animation.
+    - latest_chunk: Newly arrived token batch, wrapped in a fade-in span when safe.
+    - is_active: Whether generation is currently active (appends typing cursor).
+    """
+    cursor_html = '<span class="typing-cursor"></span>'
+    if not is_active:
+        return (stable_text + latest_chunk).strip()
+
+    full_text = stable_text + latest_chunk
+    if not full_text:
+        return cursor_html
+
+    # Check for formatting characters where wrapping would break block-level markdown
+    has_markdown_symbols = any(sym in latest_chunk for sym in ["\n", "```", "`", "**", "*", "#", "|", "[", "]"])
+
+    if not has_markdown_symbols and latest_chunk:
+        return f"{stable_text}<span class=\"streaming-fade-in\">{latest_chunk}</span>{cursor_html}"
+    else:
+        return f"{full_text}{cursor_html}"
+
+
+class SmoothStreamAccumulator:
+    """
+    Buffers and smooths token streams for progressive UI rendering:
+    - Emits first visible content immediately upon arrival (zero startup delay).
+    - Batches subsequent tokens to prevent high-frequency DOM re-renders and UI flicker.
+    - Flushes on natural boundaries (punctuation, newlines) or time thresholds (~45ms).
+    """
+    def __init__(
+        self,
+        min_batch_chars: int = 8,
+        min_batch_tokens: int = 3,
+        min_interval_sec: float = 0.045
+    ):
+        self.min_batch_chars = min_batch_chars
+        self.min_batch_tokens = min_batch_tokens
+        self.min_interval_sec = min_interval_sec
+        self.full_response = ""
+        self.stable_text = ""
+        self.pending_tokens: List[str] = []
+        self.first_token_emitted = False
+        self.last_render_time = 0.0
+        self.render_count = 0
+
+    def add_token(self, token: str) -> bool:
+        """
+        Adds a token to the accumulator. Returns True if the UI should be updated.
+        """
+        self.full_response += token
+        self.pending_tokens.append(token)
+        pending_chunk = "".join(self.pending_tokens)
+
+        # Sanitize to check if there is actual visible content
+        clean_preview = re.sanitize_model_output(self.full_response)
+        if not clean_preview.strip():
+            return False
+
+        now = time.time()
+        time_elapsed = now - self.last_render_time
+
+        # Condition 1: First visible token -> update immediately
+        if not self.first_token_emitted:
+            return True
+
+        # Condition 2: Punctuation or newline boundary
+        has_boundary = any(b in token for b in ["\n", ". ", "? ", "! ", ": ", "; "])
+        if has_boundary:
+            return True
+
+        # Condition 3: Batch size reached
+        has_enough = (len(self.pending_tokens) >= self.min_batch_tokens or 
+                      len(pending_chunk) >= self.min_batch_chars)
+        if has_enough:
+            return True
+
+        # Condition 4: Time interval elapsed
+        if time_elapsed >= self.min_interval_sec:
+            return True
+
+        return False
+
+    def get_display_html(self, is_active: bool = True) -> str:
+        """
+        Constructs the streaming display HTML with cursor and fade-in span,
+        advancing stable_text to the current clean output.
+        """
+        clean_preview = re.sanitize_model_output(self.full_response)
+        pending_chunk = "".join(self.pending_tokens)
+
+        html = render_streaming_display(
+            stable_text=self.stable_text,
+            latest_chunk=pending_chunk,
+            is_active=is_active
+        )
+
+        if is_active:
+            self.stable_text = clean_preview
+            self.pending_tokens = []
+            self.last_render_time = time.time()
+            self.first_token_emitted = True
+            self.render_count += 1
+
+        return html
+
+    def get_final_text(self, interrupted: bool = False) -> str:
+        """Returns the final sanitized plain markdown text without cursor or spans."""
+        clean = re.sanitize_model_output(self.full_response)
+        if interrupted and not clean.endswith("]*"):
+            clean += "\n\n*[Generation stopped by user]*"
+        if not clean:
+            clean = "*[No response generated]*"
+        return clean
 
 
 # ============================================================================
@@ -628,7 +791,9 @@ if app_mode == "💬 Technical Consultation Chat":
 
         with st.chat_message("assistant", avatar="🛡️"):
             response_placeholder = st.empty()
-            full_response = ""
+            # Immediate active typing indicator while retrieval and model start
+            response_placeholder.markdown('<span class="typing-cursor"></span>', unsafe_allow_html=True)
+            accumulator = SmoothStreamAccumulator()
             stream_citations: List[Dict[str, Any]] = []
             generation_interrupted = False
 
@@ -651,27 +816,21 @@ if app_mode == "💬 Technical Consultation Chat":
                                 pass
                         break
 
-                    full_response += token
-                    clean_preview = re.sanitize_model_output(full_response)
-                    response_placeholder.markdown(clean_preview + "▌")
+                    if accumulator.add_token(token):
+                        display_html = accumulator.get_display_html(is_active=True)
+                        response_placeholder.markdown(display_html, unsafe_allow_html=True)
 
             except Exception as e:
                 st.error(f"Generation error: {e}")
-                if not full_response:
-                    full_response = f"*[Error during inference: {str(e)}]*"
+                if not accumulator.full_response:
+                    accumulator.full_response = f"*[Error during inference: {str(e)}]*"
                 generation_interrupted = True
 
             finally:
                 st.session_state["is_generating"] = False
                 st.session_state["stop_requested"] = False
 
-            clean_text = re.sanitize_model_output(full_response)
-            if generation_interrupted and not clean_text.endswith("]*"):
-                clean_text += "\n\n*[Generation stopped by user]*"
-
-            if not clean_text:
-                clean_text = "*[No response generated]*"
-
+            clean_text = accumulator.get_final_text(interrupted=generation_interrupted)
             response_placeholder.markdown(clean_text)
 
             db.save_message(

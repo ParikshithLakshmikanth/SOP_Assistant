@@ -44,7 +44,9 @@ def run_tests():
     # ------------------------------------------------------------------------
     print("\n--- Test 1: Python Compilation of app.py ---")
     try:
-        app_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "app.py")
+        app_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "app.py")
+        if not os.path.exists(app_path):
+            app_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "app.py")
         py_compile.compile(app_path, doraise=True)
         print("  [PASS] app.py compiled successfully with 0 syntax or parsing errors.")
         test_results["Test 1: app.py Compilation"] = "PASS"

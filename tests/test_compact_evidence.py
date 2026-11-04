@@ -197,7 +197,9 @@ class TestCompactEvidenceSources(unittest.TestCase):
 
     def test_app_compilation(self):
         """Verify app.py compiles without syntax or parsing errors."""
-        app_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "app.py")
+        app_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "app.py")
+        if not os.path.exists(app_path):
+            app_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "app.py")
         py_compile.compile(app_path, doraise=True)
 
 

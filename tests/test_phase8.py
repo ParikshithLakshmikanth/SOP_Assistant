@@ -24,8 +24,9 @@ import sys
 import unittest
 import uuid
 
-# Ensure current working directory is in sys.path
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Ensure project root is in sys.path
+_dir = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.abspath(os.path.join(_dir, "..")) if os.path.basename(_dir) == "tests" else _dir
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
