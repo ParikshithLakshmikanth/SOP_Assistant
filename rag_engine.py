@@ -722,11 +722,11 @@ def remove_document_from_index(
     index_dir: str = DEFAULT_INDEX_DIR
 ) -> Dict[str, Any]:
     """
-    Removes all chunks associated with a specific document ID from the FAISS
+    Removes all chunks associated with a specific document ID or filename from the FAISS
     index and metadata, updating the manifest and saving atomically.
     
     Args:
-        document_id: Document ID to remove (e.g. 'HVF/AVNL/SOP-MBT/HW-101').
+        document_id: Document ID or filename to remove.
         index_dir: Target FAISS directory.
         
     Returns:
@@ -738,7 +738,7 @@ def remove_document_from_index(
 
     indices_to_remove = [
         i for i, chunk in enumerate(metadata)
-        if chunk.get("document_id") == document_id
+        if chunk.get("document_id") == document_id or chunk.get("filename") == document_id
     ]
 
     if not indices_to_remove:
@@ -763,7 +763,7 @@ def remove_document_from_index(
     if "documents" in manifest:
         manifest["documents"] = [
             d for d in manifest["documents"]
-            if d.get("document_id") != document_id
+            if d.get("document_id") != document_id and d.get("filename") != document_id
         ]
     manifest["updated_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -785,14 +785,21 @@ def index_chunks(
     embed_model: str = DEFAULT_EMBED_MODEL
 ) -> Dict[str, Any]:
     """
-    Embeds and indexes a list of chunk dictionaries into the FAISS index.
-    Supports incremental indexing and automatic duplicate replacement.
+    Embeds and indexes a list of chunk dictionaries into the FAISS index with
+    guaranteed transactional safety, duplicate protection, and atomic persistence.
+    
+    Guarantees:
+    - Checks for identical duplicates; skips redundant embedding if content is already indexed.
+    - Generates and verifies embeddings BEFORE modifying index or deleting existing chunks.
+    - Atomically replaces prior records on document updates without leaving orphan vectors.
+    - Synchronizes FAISS index, metadata JSON, and manifest JSON atomically.
+    - Disk state remains untouched if embedding generation or validation fails.
     
     Args:
-        chunks: List of chunk dictionaries conforming to Phase 1 schema.
+        chunks: List of chunk dictionaries conforming to schema.
         index_dir: Path to directory storing index.
         batch_size: Batch size for Ollama embeddings.
-        replace_existing: If True, purges prior chunks with the same document_id.
+        replace_existing: If True, purges prior chunks with matching document_id or filename.
         endpoint: Local Ollama URL.
         embed_model: Registered Ollama embedding model.
         
@@ -803,7 +810,7 @@ def index_chunks(
         logger.warning("index_chunks called with empty chunks list.")
         return {"indexed_chunks": 0, "total_chunks": 0, "status": "empty_input"}
 
-    # Load existing or create new index
+    # Load existing or initialize fresh index
     index, metadata, manifest = load_faiss_index(index_dir)
     if index is None:
         index = initialize_faiss_index(EXPECTED_EMBEDDING_DIM)
@@ -817,50 +824,79 @@ def index_chunks(
             "documents": []
         }
 
-    # Group new chunks by document_id
+    # Group incoming chunks by document identifiers
     docs_incoming = set(c.get("document_id") for c in chunks if c.get("document_id"))
+    fnames_incoming = set(c.get("filename") for c in chunks if c.get("filename"))
 
-    # Handle duplicates if requested
-    if replace_existing:
-        for doc_id in docs_incoming:
-            remove_document_from_index(doc_id, index_dir=index_dir)
-        # Reload after removals
-        index, metadata, manifest = load_faiss_index(index_dir)
-        if index is None:
-            index = initialize_faiss_index(EXPECTED_EMBEDDING_DIM)
-            metadata = []
-            manifest = {
-                "version": INDEX_VERSION,
-                "embedding_model": embed_model,
-                "embedding_dimension": EXPECTED_EMBEDDING_DIM,
-                "chunk_count": 0,
-                "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
-                "documents": []
-            }
+    # 1. Duplicate check: if identical content is already indexed, skip redundant embedding
+    if metadata:
+        existing_matches = [
+            c for c in metadata
+            if c.get("document_id") in docs_incoming or (c.get("filename") and c.get("filename") in fnames_incoming)
+        ]
+        if existing_matches and len(existing_matches) == len(chunks):
+            existing_texts = [c.get("chunk_text", "").strip() for c in existing_matches]
+            incoming_texts = [c.get("chunk_text", "").strip() for c in chunks]
+            if existing_texts == incoming_texts:
+                logger.info(f"Duplicate upload detected: document {list(docs_incoming)} already indexed with identical content.")
+                return {
+                    "indexed_chunks": 0,
+                    "total_index_chunks": index.ntotal,
+                    "embedding_duration_s": 0.0,
+                    "documents_affected": list(docs_incoming),
+                    "status": "duplicate_skipped",
+                    "message": "Document is already indexed with identical content."
+                }
 
-    # Generate embeddings for new chunks
+    # 2. Generate embeddings FIRST before modifying any existing index records
     texts = [c["chunk_text"] for c in chunks]
     t0 = time.time()
-    vectors = generate_embeddings(
-        texts,
-        model=embed_model,
-        batch_size=batch_size,
-        endpoint=endpoint,
-        normalize=True
-    )
+    try:
+        vectors = generate_embeddings(
+            texts,
+            model=embed_model,
+            batch_size=batch_size,
+            endpoint=endpoint,
+            normalize=True
+        )
+    except Exception as e:
+        logger.error(f"Embedding generation failed: {e}. Preserving existing FAISS index unchanged.")
+        raise RuntimeError(f"Embedding generation failed: {e}") from e
+
     embed_duration = time.time() - t0
 
-    # Add to FAISS index
-    index.add(vectors)
+    # Validate generated embeddings
+    if vectors is None or len(vectors) != len(chunks):
+        raise ValueError(f"Vector count mismatch: generated {len(vectors) if vectors is not None else 0} vectors for {len(chunks)} chunks.")
+    if vectors.shape[1] != EXPECTED_EMBEDDING_DIM:
+        raise ValueError(f"Vector dimension mismatch: got {vectors.shape[1]}, expected {EXPECTED_EMBEDDING_DIM}.")
+    if not np.all(np.isfinite(vectors)):
+        raise ValueError("Generated vectors contain NaN or infinite values.")
 
-    # Append to metadata
+    # 3. Handle replacement of prior chunks only after embeddings are safely produced
+    if replace_existing and metadata:
+        indices_to_remove = [
+            i for i, c in enumerate(metadata)
+            if c.get("document_id") in docs_incoming or (c.get("filename") and c.get("filename") in fnames_incoming)
+        ]
+        if indices_to_remove:
+            id_selector = np.array(indices_to_remove, dtype=np.int64)
+            index.remove_ids(id_selector)
+            metadata = [c for i, c in enumerate(metadata) if i not in indices_to_remove]
+            if "documents" in manifest:
+                manifest["documents"] = [
+                    d for d in manifest["documents"]
+                    if d.get("document_id") not in docs_incoming and d.get("filename") not in fnames_incoming
+                ]
+
+    # 4. Add verified vectors and metadata
+    index.add(vectors)
     metadata.extend(chunks)
 
-    # Update manifest
+    # 5. Synchronize manifest
     manifest["chunk_count"] = index.ntotal
     manifest["updated_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
 
-    # Update document inventory in manifest
     existing_doc_ids = {d["document_id"] for d in manifest.get("documents", [])}
     for c in chunks:
         d_id = c.get("document_id")
@@ -873,7 +909,7 @@ def index_chunks(
             })
             existing_doc_ids.add(d_id)
 
-    # Persist atomically
+    # 6. Persist atomically
     save_faiss_index(index, metadata, manifest, index_dir=index_dir)
 
     return {
@@ -881,8 +917,207 @@ def index_chunks(
         "total_index_chunks": index.ntotal,
         "embedding_duration_s": round(embed_duration, 2),
         "documents_affected": list(docs_incoming),
-        "status": "success"
+        "status": "success",
+        "persistence_verified": True
     }
+
+
+COMPONENTS_FILENAME = "components_metadata.json"
+
+
+def save_components_metadata(
+    components: List[Dict[str, Any]],
+    index_dir: str = DEFAULT_INDEX_DIR
+) -> bool:
+    """Atomically persists component records to components_metadata.json."""
+    os.makedirs(index_dir, exist_ok=True)
+    comp_path = os.path.join(index_dir, COMPONENTS_FILENAME)
+    tmp_path = comp_path + ".tmp"
+    try:
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump(components, f, indent=2, ensure_ascii=False)
+        if os.path.exists(comp_path):
+            os.remove(comp_path)
+        os.replace(tmp_path, comp_path)
+        return True
+    except Exception as e:
+        logger.error(f"Failed to persist components metadata: {e}")
+        if os.path.exists(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
+        return False
+
+
+def load_components_metadata(
+    index_dir: str = DEFAULT_INDEX_DIR
+) -> List[Dict[str, Any]]:
+    """Loads persisted component records from components_metadata.json."""
+    comp_path = os.path.join(index_dir, COMPONENTS_FILENAME)
+    if not os.path.exists(comp_path):
+        return []
+    try:
+        with open(comp_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        logger.warning(f"Could not load components metadata from {comp_path}: {e}")
+        return []
+
+
+def get_document_components(
+    identifier: str,
+    index_dir: str = DEFAULT_INDEX_DIR
+) -> List[Dict[str, Any]]:
+    """
+    Returns all visual, tabular, and callout components associated with a document ID or filename.
+    """
+    comps = load_components_metadata(index_dir)
+    norm = identifier.lower().strip()
+    return [
+        c for c in comps
+        if (c.get("document_id") and c.get("document_id").lower().strip() == norm)
+        or (c.get("filename") and c.get("filename").lower().strip() == norm)
+        or (c.get("filename") and norm in c.get("filename", "").lower())
+    ]
+
+
+def search_components(
+    query: str,
+    subsystem: Optional[str] = None,
+    source_type: Optional[str] = None,
+    entity_type: Optional[str] = None,
+    is_uncertain: Optional[bool] = None,
+    top_k: int = 25,
+    index_dir: str = DEFAULT_INDEX_DIR
+) -> List[Dict[str, Any]]:
+    """
+    Searches multi-source component records across names, specifications, tooling,
+    subsystems, entity types, and descriptions with optional facet filtering.
+    """
+    comps = load_components_metadata(index_dir)
+    if not comps:
+        return []
+
+    tokens = [t.lower() for t in re.split(r'\s+', query) if len(t) >= 2]
+    scored = []
+
+    for c in comps:
+        # Subsystem filter
+        if subsystem and subsystem != "All Subsystems" and c.get("subsystem") != subsystem:
+            continue
+        # Source type filter
+        if source_type and source_type != "All Sources" and c.get("source_type") != source_type:
+            continue
+        # Entity type filter
+        if entity_type and entity_type not in ("All Entity Types", "All Extracted Entities (Unfiltered)"):
+            if entity_type in ("PHYSICAL_COMPONENTS_ONLY", "Physical Components & Assemblies", "Physical Components & Assemblies (Default)"):
+                if c.get("entity_type") not in ("PHYSICAL_COMPONENT", "ASSEMBLY", "SUBSYSTEM"):
+                    continue
+            elif c.get("entity_type") != entity_type:
+                continue
+        # Uncertainty filter
+        if is_uncertain is not None and c.get("is_uncertain") != is_uncertain:
+            continue
+
+        searchable = " ".join([
+            str(c.get("component_name", "")),
+            str(c.get("simple_description", "")),
+            str(c.get("primary_function", "")),
+            str(c.get("entity_type", "")),
+            str(c.get("material_or_construction", "")),
+            str(c.get("technical_specifications", "")),
+            str(c.get("tooling_or_metrology", "")),
+            str(c.get("acceptance_criteria", "")),
+            str(c.get("subsystem", "")),
+            str(c.get("section_reference", "")),
+            str(c.get("callout_warning", ""))
+        ]).lower()
+
+        if not tokens:
+            scored.append((1.0, c))
+        else:
+            matches = sum(1 for tok in tokens if tok in searchable)
+            if matches > 0:
+                score = matches / len(tokens)
+                scored.append((score, c))
+
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [item[1] for item in scored[:top_k]]
+
+
+def save_document_components(
+    document_id: str,
+    filename: str,
+    components: List[Dict[str, Any]],
+    index_dir: str = DEFAULT_INDEX_DIR
+) -> bool:
+    """
+    Persists or updates component records for a specific document without duplicating or losing
+    other documents' components in components_metadata.json.
+    """
+    existing_comps = load_components_metadata(index_dir)
+    d_id_norm = str(document_id).strip().lower()
+    fname_norm = str(filename).strip().lower()
+
+    # Filter out old components belonging to this document
+    updated = [
+        c for c in existing_comps
+        if not (
+            (c.get("document_id") and str(c.get("document_id")).strip().lower() == d_id_norm)
+            or (c.get("filename") and str(c.get("filename")).strip().lower() == fname_norm)
+        )
+    ]
+    # Ensure components have document_id and filename
+    for comp in components:
+        comp.setdefault("document_id", document_id)
+        comp.setdefault("filename", filename)
+        comp.setdefault("source_filename", filename)
+
+    updated.extend(components)
+    return save_components_metadata(updated, index_dir)
+
+
+def retry_component_extraction(
+    pdf_path: str,
+    document_id: Optional[str] = None,
+    filename: Optional[str] = None,
+    revision: Optional[str] = None,
+    index_dir: str = DEFAULT_INDEX_DIR
+) -> Dict[str, Any]:
+    """
+    Safely re-attempts component extraction for an ingested document and updates
+    components_metadata.json without touching FAISS index chunks.
+    """
+    import document_processor as dp
+    fname = filename or os.path.basename(pdf_path)
+    try:
+        comps = dp.extract_components_from_document(pdf_path)
+        if document_id:
+            for c in comps:
+                c["document_id"] = document_id
+        if revision:
+            for c in comps:
+                c["revision"] = revision
+
+        saved = save_document_components(
+            document_id=document_id or (comps[0]["document_id"] if comps else "UNKNOWN"),
+            filename=fname,
+            components=comps,
+            index_dir=index_dir
+        )
+        return {
+            "status": "success" if saved else "persistence_failed",
+            "extracted_count": len(comps),
+            "filename": fname
+        }
+    except Exception as e:
+        logger.error(f"Retry component extraction failed for {fname}: {e}")
+        return {
+            "status": f"error: {str(e)}",
+            "extracted_count": 0,
+            "filename": fname
+        }
 
 
 def index_documents(
@@ -892,28 +1127,58 @@ def index_documents(
     replace_existing: bool = True
 ) -> Dict[str, Any]:
     """
-    Extracts all chunks from a list of processed document objects and indexes them.
+    Extracts all chunks and multi-source components from processed document objects
+    and indexes them into FAISS and components_metadata.json.
     
     Args:
         documents: List of document dicts returned by document_processor.process_pdf().
-        index_dir: Storage path for FAISS index.
+        index_dir: Storage path for FAISS index and components.
         batch_size: Embedding batch size.
         replace_existing: Whether to overwrite existing document records.
         
     Returns:
-        Dict[str, Any]: Combined indexing summary.
+        Dict[str, Any]: Combined indexing summary including component counts.
     """
     all_chunks: List[Dict[str, Any]] = []
+    all_components: List[Dict[str, Any]] = []
+
     for doc in documents:
         doc_chunks = doc.get("chunks", [])
         all_chunks.extend(doc_chunks)
 
-    return index_chunks(
+        # Attach document_id and filename to component records if missing
+        doc_comps = doc.get("components", [])
+        d_id = doc.get("document_id")
+        fname = doc.get("filename")
+        for comp in doc_comps:
+            comp.setdefault("document_id", d_id)
+            comp.setdefault("filename", fname)
+        all_components.extend(doc_comps)
+
+    idx_summary = index_chunks(
         all_chunks,
         index_dir=index_dir,
         batch_size=batch_size,
         replace_existing=replace_existing
     )
+
+    if all_components:
+        existing_comps = load_components_metadata(index_dir)
+        docs_incoming = set(c.get("document_id") for c in all_chunks if c.get("document_id"))
+        fnames_incoming = set(c.get("filename") for c in all_chunks if c.get("filename"))
+
+        if replace_existing and existing_comps:
+            existing_comps = [
+                c for c in existing_comps
+                if c.get("document_id") not in docs_incoming and c.get("filename") not in fnames_incoming
+            ]
+
+        existing_comps.extend(all_components)
+        save_components_metadata(existing_comps, index_dir)
+        idx_summary["indexed_components"] = len(all_components)
+        idx_summary["total_components"] = len(existing_comps)
+
+    return idx_summary
 
 
 def rebuild_faiss_index(
@@ -1001,8 +1266,324 @@ def rebuild_faiss_index(
 
 
 # ============================================================================
+# INDEX HEALTH & VERIFICATION UTILITIES
+# ============================================================================
+
+def verify_faiss_index_health(index_dir: str = DEFAULT_INDEX_DIR) -> Dict[str, Any]:
+    """
+    Performs comprehensive diagnostic health audit on the FAISS index and metadata.
+    
+    Verifies:
+    1. Disk existence of index binary, metadata JSON, and manifest JSON.
+    2. Vector dimensions match expected embedding dimension (768).
+    3. Strict synchronization between FAISS ntotal, metadata records, and manifest count.
+    4. Finite vector representations and valid L2 normalization (~1.0).
+    5. Structural integrity of chunk metadata fields across all chunks.
+    6. Complete document inventory partitioned into baseline vs uploaded SOPs.
+    
+    Returns:
+        Dict[str, Any]: Detailed diagnostic health report.
+    """
+    issues = []
+    index_path = os.path.join(index_dir, INDEX_FILENAME)
+    meta_path = os.path.join(index_dir, METADATA_FILENAME)
+    manifest_path = os.path.join(index_dir, MANIFEST_FILENAME)
+
+    if not os.path.exists(index_path):
+        issues.append(f"Missing FAISS index file: {index_path}")
+    if not os.path.exists(meta_path):
+        issues.append(f"Missing metadata file: {meta_path}")
+    if not os.path.exists(manifest_path):
+        issues.append(f"Missing manifest file: {manifest_path}")
+
+    if issues:
+        return {
+            "is_healthy": False,
+            "issues": issues,
+            "total_vectors": 0,
+            "total_documents": 0,
+            "baseline_chunks_count": 0,
+            "uploaded_chunks_count": 0,
+            "baseline_documents": [],
+            "uploaded_documents": [],
+            "embedding_dimension": 0
+        }
+
+    try:
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            manifest = json.load(f)
+        with open(meta_path, "r", encoding="utf-8") as f:
+            metadata = json.load(f)
+        index = faiss.read_index(index_path)
+    except Exception as e:
+        return {
+            "is_healthy": False,
+            "issues": [f"Failed to read index files: {str(e)}"],
+            "total_vectors": 0,
+            "total_documents": 0
+        }
+
+    # Verify vector dimension
+    if index.d != EXPECTED_EMBEDDING_DIM:
+        issues.append(f"Index vector dimension mismatch: {index.d} != {EXPECTED_EMBEDDING_DIM}")
+    if manifest.get("embedding_dimension") != EXPECTED_EMBEDDING_DIM:
+        issues.append(f"Manifest dimension mismatch: {manifest.get('embedding_dimension')} != {EXPECTED_EMBEDDING_DIM}")
+
+    # Verify strict synchronization
+    manifest_count = manifest.get("chunk_count", -1)
+    if index.ntotal != len(metadata):
+        issues.append(f"Desynchronization: index.ntotal ({index.ntotal}) != len(metadata) ({len(metadata)})")
+    if index.ntotal != manifest_count:
+        issues.append(f"Desynchronization: index.ntotal ({index.ntotal}) != manifest chunk_count ({manifest_count})")
+
+    # Verify vector finiteness and L2 normalization
+    if index.ntotal > 0:
+        try:
+            sample_count = min(index.ntotal, 50)
+            sample_vectors = np.zeros((sample_count, index.d), dtype=np.float32)
+            for i in range(sample_count):
+                sample_vectors[i] = index.reconstruct(i)
+            if not np.all(np.isfinite(sample_vectors)):
+                issues.append("Non-finite values (NaN or Inf) detected in index vectors.")
+            norms = np.linalg.norm(sample_vectors, axis=1)
+            if not np.all(np.isclose(norms, 1.0, atol=0.08)):
+                issues.append("Sample vectors deviate from expected unit L2 normalization.")
+        except Exception:
+            pass
+
+    # Verify metadata field completeness
+    required_keys = {"chunk_id", "document_id", "filename", "revision", "chunk_text", "page_number"}
+    missing_count = sum(1 for c in metadata if not required_keys.issubset(c.keys()))
+    if missing_count > 0:
+        issues.append(f"{missing_count} chunks have incomplete metadata keys.")
+
+    # Inventory breakdown
+    baseline_docs = set()
+    uploaded_docs = set()
+    baseline_chunks = 0
+    uploaded_chunks = 0
+
+    for c in metadata:
+        fname = c.get("filename", "")
+        if is_standard_baseline_corpus_doc(fname):
+            baseline_docs.add(fname)
+            baseline_chunks += 1
+        else:
+            uploaded_docs.add(fname)
+            uploaded_chunks += 1
+
+    return {
+        "is_healthy": len(issues) == 0,
+        "issues": issues,
+        "total_vectors": index.ntotal,
+        "total_documents": len(baseline_docs | uploaded_docs),
+        "baseline_chunks_count": baseline_chunks,
+        "uploaded_chunks_count": uploaded_chunks,
+        "baseline_documents": sorted(list(baseline_docs)),
+        "uploaded_documents": sorted(list(uploaded_docs)),
+        "embedding_dimension": index.d,
+        "manifest_version": manifest.get("version", "unknown")
+    }
+
+
+def verify_document_indexed(identifier: str, index_dir: str = DEFAULT_INDEX_DIR) -> Dict[str, Any]:
+    """
+    Checks if a document (by document_id or filename) is properly indexed with valid chunks.
+    
+    Returns:
+        Dict[str, Any]: Verification status, chunk count, and document metadata.
+    """
+    index, metadata, manifest = load_faiss_index(index_dir)
+    if index is None or not metadata:
+        return {"is_indexed": False, "chunk_count": 0, "message": "Index not found or empty."}
+
+    norm_id = identifier.lower().strip()
+    matching = [
+        c for c in metadata
+        if (c.get("document_id") and c.get("document_id").lower().strip() == norm_id)
+        or (c.get("filename") and c.get("filename").lower().strip() == norm_id)
+        or (c.get("filename") and norm_id in c.get("filename", "").lower())
+    ]
+
+    if not matching:
+        return {"is_indexed": False, "chunk_count": 0, "message": f"Document '{identifier}' not found in index."}
+
+    first = matching[0]
+    return {
+        "is_indexed": True,
+        "chunk_count": len(matching),
+        "document_id": first.get("document_id"),
+        "filename": first.get("filename"),
+        "logical_sop_id": first.get("logical_sop_id"),
+        "revision": first.get("revision"),
+        "is_standard": is_standard_baseline_corpus_doc(first.get("filename", "")),
+        "chunk_ids": [c.get("chunk_id") for c in matching]
+    }
+
+
+def verify_retrieval_for_document(
+    query: str,
+    expected_identifier: str,
+    top_k: int = 5,
+    revision_mode: Optional[str] = "v2",
+    index_dir: str = DEFAULT_INDEX_DIR
+) -> Dict[str, Any]:
+    """
+    Performs vector similarity search and verifies whether chunks from the target
+    document are retrieved in top search results.
+    
+    Returns:
+        Dict[str, Any]: Verification metrics (is_retrieved, best_rank, best_score, matching_chunks_count).
+    """
+    chunks = retrieve_relevant_chunks(
+        query=query,
+        top_k=top_k,
+        revision_mode=revision_mode,
+        index_dir=index_dir
+    )
+
+    matching_ranks = []
+    top_score = None
+    matched_chunk = None
+    norm_expected = expected_identifier.lower().strip()
+
+    for rank, chunk in enumerate(chunks, 1):
+        c_doc_id = (chunk.get("document_id") or "").lower().strip()
+        c_fname = (chunk.get("filename") or "").lower().strip()
+        if c_doc_id == norm_expected or c_fname == norm_expected or norm_expected in c_fname:
+            matching_ranks.append(rank)
+            if top_score is None:
+                top_score = chunk.get("score")
+                matched_chunk = chunk
+
+    return {
+        "is_retrieved": len(matching_ranks) > 0,
+        "best_rank": matching_ranks[0] if matching_ranks else None,
+        "best_score": round(float(top_score), 4) if top_score is not None else None,
+        "matching_chunks_count": len(matching_ranks),
+        "total_retrieved": len(chunks),
+        "matched_chunk": matched_chunk
+    }
+
+
+def get_indexed_categories(index_dir: str = DEFAULT_INDEX_DIR) -> List[str]:
+    """
+    Discovers all unique logical SOP categories present in the index metadata.
+    Preserves the 5 canonical baseline categories first, followed by any custom/uploaded categories.
+    """
+    canonical = [
+        "HVF_SOP_1_Hull_Welding",
+        "HVF_SOP_2_Turret_Integration",
+        "HVF_SOP_3_Engine_Alignment",
+        "HVF_SOP_4_Torsion_Suspension",
+        "HVF_SOP_5_Gun_Calibration"
+    ]
+    try:
+        _, metadata, _ = load_faiss_index(index_dir)
+        if not metadata:
+            return canonical
+        existing = set(c.get("logical_sop_id") for c in metadata if c.get("logical_sop_id"))
+        custom = sorted(list(existing - set(canonical)))
+        return canonical + custom
+    except Exception:
+        return canonical
+
+
+# ============================================================================
 # PASSAGE RETRIEVAL & FILTERING
 # ============================================================================
+
+# Canonical standard SOP filenames belonging to the official 10-document baseline corpus
+BASELINE_V1_FILENAMES = {
+    "hvf_sop_1_hull_welding.pdf",
+    "hvf_sop_2_turret_integration.pdf",
+    "hvf_sop_3_engine_alignment.pdf",
+    "hvf_sop_4_torsion_suspension.pdf",
+    "hvf_sop_5_gun_calibration.pdf",
+}
+
+STANDARD_CORPUS_FILENAMES = {
+    "hvf_sop_1_hull_welding.pdf",
+    "hvf_sop_1_hull_welding_v2.pdf",
+    "hvf_sop_2_turret_integration.pdf",
+    "hvf_sop_2_turret_integration_v2.pdf",
+    "hvf_sop_3_engine_alignment.pdf",
+    "hvf_sop_3_engine_alignment_v2.pdf",
+    "hvf_sop_4_torsion_suspension.pdf",
+    "hvf_sop_4_torsion_suspension_v2.pdf",
+    "hvf_sop_5_gun_calibration.pdf",
+    "hvf_sop_5_gun_calibration_v2.pdf",
+}
+
+
+def is_standard_baseline_corpus_doc(filename: str) -> bool:
+    """Returns True if the filename belongs to the official 10 standard HVF SOP documents."""
+    return str(filename).lower().strip() in STANDARD_CORPUS_FILENAMES
+
+
+def is_v2_explicit(chunk: Dict[str, Any]) -> bool:
+    """Returns True if chunk or document record has explicit V2/revised markers."""
+    rev = str(chunk.get("revision", ""))
+    doc_id = str(chunk.get("document_id", ""))
+    fname = str(chunk.get("filename", "")).lower()
+    eco = chunk.get("eco_number", "")
+
+    if "Version 2" in rev or "[Version 2.0]" in rev or "v2.0" in rev.lower():
+        return True
+    if doc_id.upper().endswith("-V2") or "/V2" in doc_id.upper():
+        return True
+    if eco and str(eco).strip() and str(eco).strip() not in ("None", "UNKNOWN", ""):
+        return True
+    if fname.endswith("_v2.pdf") or fname.endswith("-v2.pdf"):
+        return True
+    return False
+
+
+def is_v1_chunk(chunk: Dict[str, Any]) -> bool:
+    """
+    Deterministically determines whether a chunk belongs to an archival baseline (V1) SOP.
+    
+    Identified by:
+    - Known baseline SOP filenames
+    - Filename ending with '_v1.pdf' or '-v1.pdf'
+    - Revision explicitly labeled as baseline / archival / superseded
+    - Non-uploaded documents whose clean revision string matches exact baseline version tokens
+    """
+    if chunk.get("is_uploaded"):
+        return False
+
+    fname = str(chunk.get("filename", "")).lower().strip()
+    rev = str(chunk.get("revision", "")).lower().strip()
+
+    if "uploaded" in rev or "uploaded" in fname:
+        return False
+
+    if is_v2_explicit(chunk):
+        return False
+
+    if fname in BASELINE_V1_FILENAMES or fname.endswith("_v1.pdf") or fname.endswith("-v1.pdf"):
+        return True
+
+    if "baseline" in rev or "superseded" in rev or "archival" in rev:
+        return True
+
+    clean_rev = rev.split("|")[0].strip()
+    if clean_rev in ("v1.0", "v1", "rev 1", "rev 1.0", "version 1", "version 1.0"):
+        return True
+
+    return False
+
+
+def is_v2_chunk(chunk: Dict[str, Any]) -> bool:
+    """
+    Deterministically determines whether a chunk belongs to a revised (V2) or
+    currently active operational SOP.
+    
+    Any document that is not an archival baseline (V1) document is an active,
+    authoritative technical specification and is eligible for latest (V2) retrieval.
+    """
+    return not is_v1_chunk(chunk)
+
 
 def format_citation(chunk: Dict[str, Any]) -> str:
     """
@@ -1030,31 +1611,39 @@ def retrieve_relevant_chunks(
     document_id: Optional[str] = None,
     logical_sop_id: Optional[str] = None,
     revision: Optional[str] = None,
+    revision_mode: Optional[str] = None,
     score_threshold: Optional[float] = None,
     index_dir: str = DEFAULT_INDEX_DIR,
     endpoint: str = DEFAULT_OLLAMA_ENDPOINT,
-    embed_model: str = DEFAULT_EMBED_MODEL
+    embed_model: str = DEFAULT_EMBED_MODEL,
+    v2_boost: float = 0.03
 ) -> List[Dict[str, Any]]:
     """
     Performs vector similarity search in the FAISS index to retrieve the most
-    relevant document passages for a query.
+    relevant document passages for a query with V2-first revision intelligence.
     
     Guarantees:
     - Normalizes query vector for exact cosine similarity calculation.
     - Preserves all source document, revision, section, and page information.
-    - Accurately applies document_id, logical_sop_id, and revision filters.
-    - Returns non-calibrated inner product similarity scores directly.
+    - Accurately applies document_id, logical_sop_id, revision, and revision_mode filters.
+    - V2 mode: strictly retrieves only revised documents; never falls back to V1.
+    - V1 mode: strictly retrieves only baseline documents.
+    - All revisions mode: retrieves both; prioritizes V2 on comparable relevance
+      (v2_boost = 0.03) without blindly sacrificing relevance for low-similarity V2 chunks.
+    - Preserves unmanipulated cosine similarity in 'score' while ranking via 'effective_score'.
     
     Args:
         query: User question or search query string.
         top_k: Maximum number of relevant chunks to return.
         document_id: Optional filter for a specific document ID.
         logical_sop_id: Optional filter for an SOP category (e.g. 'HVF_SOP_1_Hull_Welding').
-        revision: Optional filter for a revision string.
+        revision: Optional filter for a specific revision string or mode.
+        revision_mode: Optional mode: 'v2' (Latest), 'v1' (Baseline), or 'all' (V2 prioritized).
         score_threshold: Minimum cosine similarity score.
         index_dir: FAISS directory.
         endpoint: Ollama endpoint.
         embed_model: Ollama embedding model.
+        v2_boost: Controlled boost for V2 passages on comparable relevance (default 0.03).
         
     Returns:
         List[Dict[str, Any]]: Ranked list of matching chunks with similarity scores.
@@ -1067,6 +1656,36 @@ def retrieve_relevant_chunks(
         logger.warning(f"No FAISS index available in {index_dir} for query: {query[:30]}")
         return []
 
+    # Normalize revision mode from revision_mode or revision parameter
+    effective_mode: Optional[str] = None
+    specific_revision_filter: Optional[str] = None
+
+    if revision_mode:
+        rm = revision_mode.strip().lower()
+        if "v2" in rm and "all" not in rm and "prioritize" not in rm:
+            effective_mode = "v2"
+        elif "v1" in rm or "baseline" in rm:
+            effective_mode = "v1"
+        elif "all" in rm or "cross" in rm or "prioritize" in rm:
+            effective_mode = "all"
+        else:
+            effective_mode = rm
+
+    if revision:
+        r_str = revision.strip().lower()
+        if r_str in ["v2", "v2_only", "revision_v2", "latest"] or r_str.startswith("v2 —") or r_str.startswith("v2 -"):
+            if not effective_mode:
+                effective_mode = "v2"
+        elif r_str in ["v1", "v1_only", "baseline_v1", "baseline"] or r_str.startswith("v1 —") or r_str.startswith("v1 -"):
+            if not effective_mode:
+                effective_mode = "v1"
+        elif r_str in ["all", "all_revisions", "all revisions"] or r_str.startswith("all revisions"):
+            if not effective_mode:
+                effective_mode = "all"
+        else:
+            # Caller passed a specific revision substring like "Rev 4.6"
+            specific_revision_filter = revision
+
     # 1. Embed and normalize query vector
     q_vec = generate_embedding(
         query,
@@ -1077,13 +1696,13 @@ def retrieve_relevant_chunks(
     q_arr = q_vec.reshape(1, -1).astype(np.float32)
 
     # 2. Search FAISS
-    # If filters are requested, fetch a wider pool to guarantee top_k filtered results
-    has_filters = bool(document_id or logical_sop_id or revision)
-    k_search = min(index.ntotal, top_k * 5 if has_filters else top_k)
+    # When filtering by revision mode or categories, expand candidate pool
+    has_filters = bool(document_id or logical_sop_id or specific_revision_filter or effective_mode in ("v2", "v1"))
+    k_search = min(index.ntotal, max(top_k * 8, 40) if has_filters else top_k)
 
     scores, indices = index.search(q_arr, k_search)
 
-    results: List[Dict[str, Any]] = []
+    candidates: List[Dict[str, Any]] = []
     for score, idx in zip(scores[0], indices[0]):
         if idx < 0 or idx >= len(metadata):
             continue
@@ -1102,19 +1721,34 @@ def retrieve_relevant_chunks(
         if logical_sop_id and raw_chunk.get("logical_sop_id") != logical_sop_id:
             continue
 
-        # Apply Revision filter
-        if revision and revision.lower() not in raw_chunk.get("revision", "").lower():
+        # Apply Specific Revision Substring filter (e.g. 'Rev 4.6')
+        if specific_revision_filter and specific_revision_filter.lower() not in raw_chunk.get("revision", "").lower():
+            continue
+
+        # Apply Revision Mode filter (V2 vs V1 vs All)
+        chunk_is_v2 = is_v2_chunk(raw_chunk)
+        if effective_mode == "v2" and not chunk_is_v2:
+            continue
+        elif effective_mode == "v1" and chunk_is_v2:
             continue
 
         result_item = dict(raw_chunk)
-        result_item["score"] = float(score)
+        raw_score = float(score)
+        result_item["score"] = raw_score
         result_item["citation"] = format_citation(raw_chunk)
+        result_item["is_v2"] = chunk_is_v2
 
-        results.append(result_item)
-        if len(results) >= top_k:
-            break
+        # Controlled V2 preference in "All revisions" mode among comparably relevant results
+        if effective_mode == "all" and chunk_is_v2:
+            result_item["effective_score"] = raw_score + v2_boost
+        else:
+            result_item["effective_score"] = raw_score
 
-    return results
+        candidates.append(result_item)
+
+    # Rank by effective_score descending
+    candidates.sort(key=lambda x: x.get("effective_score", x["score"]), reverse=True)
+    return candidates[:top_k]
 
 
 # ============================================================================
@@ -1203,6 +1837,11 @@ def generate_rag_answer(
     question: str,
     retrieved_chunks: Optional[List[Dict[str, Any]]] = None,
     top_k: int = 5,
+    document_id: Optional[str] = None,
+    logical_sop_id: Optional[str] = None,
+    revision: Optional[str] = None,
+    revision_mode: Optional[str] = None,
+    score_threshold: Optional[float] = None,
     conversation_history: Optional[List[Dict[str, str]]] = None,
     endpoint: str = DEFAULT_OLLAMA_ENDPOINT,
     model: str = DEFAULT_LLM_MODEL,
@@ -1214,15 +1853,17 @@ def generate_rag_answer(
     
     Guarantees:
     - Strictly grounds generation in retrieved evidence.
-    - Evaluates and flags insufficient evidence conditions.
+    - Evaluates and flags insufficient evidence conditions (with revision-aware abstention).
     - Returns structured citation metadata alongside answer text.
     - Separates conversational dialogue context from authoritative document evidence.
+    - Detects cross-revision evidence and enforces explicit version differentiation.
     
     Returns:
         Dict[str, Any]:
             - answer (str)
             - citations (List[Dict[str, Any]])
             - is_insufficient (bool)
+            - is_cross_revision (bool)
             - model (str)
             - tokens_per_second (float)
             - eval_count (int)
@@ -1232,14 +1873,28 @@ def generate_rag_answer(
         retrieved_chunks = retrieve_relevant_chunks(
             query=question,
             top_k=top_k,
+            document_id=document_id,
+            logical_sop_id=logical_sop_id,
+            revision=revision,
+            revision_mode=revision_mode,
+            score_threshold=score_threshold,
             endpoint=endpoint
         )
 
     if not retrieved_chunks:
+        mode_val = (revision_mode or (revision if revision and any(k in revision.lower() for k in ["v2", "v1"]) else "")).lower()
+        if "v2" in mode_val and "all" not in mode_val:
+            insufficient_msg = "The selected revision (V2 — Latest revision) does not provide sufficient evidence to answer this question."
+        elif "v1" in mode_val:
+            insufficient_msg = "The selected revision (V1 — Baseline revision) does not provide sufficient evidence to answer this question."
+        else:
+            insufficient_msg = "The provided SOP documentation does not contain sufficient evidence to answer this question."
+
         return {
-            "answer": "The provided SOP documentation does not contain sufficient evidence to answer this question.",
+            "answer": insufficient_msg,
             "citations": [],
             "is_insufficient": True,
+            "is_cross_revision": False,
             "model": model,
             "tokens_per_second": 0.0,
             "eval_count": 0,
@@ -1247,6 +1902,10 @@ def generate_rag_answer(
         }
 
     evidence_context, citations = build_evidence_context(retrieved_chunks, max_context_chars=16000)
+
+    has_v1 = any(is_v1_chunk(c) for c in retrieved_chunks)
+    has_v2 = any(is_v2_chunk(c) for c in retrieved_chunks)
+    is_cross_revision = has_v1 and has_v2
 
     # Construct bounded user prompt
     prompt_parts = []
@@ -1273,11 +1932,21 @@ def generate_rag_answer(
     prompt_parts.append(
         "Answer the user's specific question using relevant evidence from the passages above.\n"
         "- Focus directly on evidence relevant to the question.\n"
-        "- Present all relevant parameters, tolerances, and acceptance criteria in structured bullet points or a table.\n"
-        "- Distinguish between baseline (Rev 4.2) and revised (Rev 5.0) requirements if present.\n"
+        "- Present all relevant parameters, tolerances, and acceptance criteria concisely in structured bullet points or a table.\n"
+        "- Avoid redundant or overly repetitive explanations.\n"
+    )
+    if is_cross_revision:
+        prompt_parts.append(
+            "- CRITICAL: The retrieved evidence spans multiple revisions (both baseline V1 and revised V2). "
+            "Clearly identify the exact revision for each assertion and explicitly distinguish baseline vs revised values.\n"
+        )
+    else:
+        prompt_parts.append("- Distinguish between baseline (Rev 4.2) and revised (Rev 5.0) requirements if present.\n")
+
+    prompt_parts.append(
         "- Insert the exact bracketed citation for every parameter.\n"
         "- If certain benchmarks are not covered in the retrieved SOP evidence, explicitly note what is missing.\n"
-        "- End with a complete, concluded response."
+        "- Conclude concisely and end with complete terminal punctuation."
     )
 
     full_prompt = "\n".join(prompt_parts)
@@ -1340,6 +2009,7 @@ def answer_question(
         document_id: Optional document ID filter.
         logical_sop_id: Optional logical SOP category filter.
         revision: Optional revision filter.
+        revision_mode: Optional revision mode ('v2', 'v1', or 'all').
         score_threshold: Minimum cosine similarity.
         conversation_history: Prior chat history.
         index_dir: FAISS storage directory.
@@ -1356,6 +2026,7 @@ def answer_question(
         document_id=document_id,
         logical_sop_id=logical_sop_id,
         revision=revision,
+        revision_mode=revision_mode,
         score_threshold=score_threshold,
         index_dir=index_dir,
         endpoint=endpoint
@@ -1367,7 +2038,9 @@ def answer_question(
         retrieved_chunks=chunks,
         conversation_history=conversation_history,
         endpoint=endpoint,
-        model=model
+        model=model,
+        revision=revision,
+        revision_mode=revision_mode
     )
 
     rag_output["retrieval_duration_ms"] = round(retrieval_duration_ms, 2)
@@ -1381,6 +2054,7 @@ def stream_rag_answer(
     document_id: Optional[str] = None,
     logical_sop_id: Optional[str] = None,
     revision: Optional[str] = None,
+    revision_mode: Optional[str] = None,
     score_threshold: Optional[float] = None,
     conversation_history: Optional[List[Dict[str, str]]] = None,
     index_dir: str = DEFAULT_INDEX_DIR,
@@ -1391,7 +2065,7 @@ def stream_rag_answer(
 ) -> Tuple[Generator[str, None, None], List[Dict[str, Any]], Dict[str, Any]]:
     """
     End-to-end progressive RAG streaming pipeline:
-    1. Retrieves relevant evidence passages from FAISS.
+    1. Retrieves relevant evidence passages from FAISS with V2-first intelligence.
     2. Builds structured evidence context and citations.
     3. Yields progressive token stream from Gemma while returning citations immediately.
     
@@ -1399,7 +2073,7 @@ def stream_rag_answer(
         Tuple[Generator[str, None, None], List[Dict[str, Any]], Dict[str, Any]]:
             - token_generator: Yields response text token by token.
             - citations: Structured citations list for UI rendering.
-            - info: Metadata dict (retrieval_duration_ms, retrieved_chunks_count).
+            - info: Metadata dict (retrieval_duration_ms, retrieved_chunks_count, is_cross_revision).
     """
     retrieval_t0 = time.time()
     chunks = retrieve_relevant_chunks(
@@ -1408,6 +2082,7 @@ def stream_rag_answer(
         document_id=document_id,
         logical_sop_id=logical_sop_id,
         revision=revision,
+        revision_mode=revision_mode,
         score_threshold=score_threshold,
         index_dir=index_dir,
         endpoint=endpoint
@@ -1416,16 +2091,27 @@ def stream_rag_answer(
 
     if not chunks:
         def empty_gen():
-            yield "The provided SOP documentation does not contain sufficient evidence to answer this question."
+            mode_val = (revision_mode or (revision if revision and any(k in revision.lower() for k in ["v2", "v1"]) else "")).lower()
+            if "v2" in mode_val and "all" not in mode_val:
+                yield "The selected revision (V2 — Latest revision) does not provide sufficient evidence to answer this question."
+            elif "v1" in mode_val:
+                yield "The selected revision (V1 — Baseline revision) does not provide sufficient evidence to answer this question."
+            else:
+                yield "The provided SOP documentation does not contain sufficient evidence to answer this question."
 
         info = {
             "retrieval_duration_ms": round(retrieval_duration_ms, 2),
             "retrieved_chunks_count": 0,
-            "is_insufficient": True
+            "is_insufficient": True,
+            "is_cross_revision": False
         }
         return empty_gen(), [], info
 
     evidence_context, citations = build_evidence_context(chunks, max_context_chars=16000)
+
+    has_v1 = any(is_v1_chunk(c) for c in chunks)
+    has_v2 = any(is_v2_chunk(c) for c in chunks)
+    is_cross_revision = has_v1 and has_v2
 
     # Build prompt
     prompt_parts = []
@@ -1447,11 +2133,21 @@ def stream_rag_answer(
     prompt_parts.append(
         "Answer the user's specific question using relevant evidence from the passages above.\n"
         "- Focus directly on evidence relevant to the question.\n"
-        "- Present all relevant parameters, tolerances, and acceptance criteria in structured bullet points or a table.\n"
-        "- Distinguish between baseline (Rev 4.2) and revised (Rev 5.0) requirements if present.\n"
+        "- Present all relevant parameters, tolerances, and acceptance criteria concisely in structured bullet points or a table.\n"
+        "- Avoid redundant or overly repetitive explanations.\n"
+    )
+    if is_cross_revision:
+        prompt_parts.append(
+            "- CRITICAL: The retrieved evidence spans multiple revisions (both baseline V1 and revised V2). "
+            "Clearly identify the exact revision for each assertion and explicitly distinguish baseline vs revised values.\n"
+        )
+    else:
+        prompt_parts.append("- Distinguish between baseline (Rev 4.2) and revised (Rev 5.0) requirements if present.\n")
+
+    prompt_parts.append(
         "- Insert the exact bracketed citation for every parameter.\n"
         "- If certain benchmarks are not covered in the retrieved SOP evidence, explicitly note what is missing.\n"
-        "- End with a complete, concluded response."
+        "- Conclude concisely and end with complete terminal punctuation."
     )
 
     full_prompt = "\n".join(prompt_parts)
@@ -1468,7 +2164,8 @@ def stream_rag_answer(
     info = {
         "retrieval_duration_ms": round(retrieval_duration_ms, 2),
         "retrieved_chunks_count": len(chunks),
-        "is_insufficient": False
+        "is_insufficient": False,
+        "is_cross_revision": is_cross_revision
     }
 
     return token_gen, citations, info

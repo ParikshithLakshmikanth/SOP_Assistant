@@ -135,6 +135,19 @@ st.markdown("""
             transform: none !important;
         }
     }
+
+    /* Continuous Chat Auto-Scroll Anchor & Target */
+    .sop-autoscroll-anchor {
+        display: block;
+        height: 1px;
+        margin-top: -1px;
+        visibility: hidden;
+    }
+    .sop-autoscroll-trigger {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -355,32 +368,93 @@ def render_compact_evidence_sources(citations_list: List[Dict[str, Any]]):
                 st.markdown(label)
 
 
+# Revision Scope Options
+REVISION_CHOICES = [
+    "V2 — Latest revision (Default)",
+    "V1 — Baseline revision",
+    "All revisions — V2 prioritized",
+]
+
+
 # ============================================================================
-# STREAMING RENDERING HELPERS (SMOOTH PROGRESSIVE DISPLAY)
+# STREAMING RENDERING & AUTO-SCROLL HELPERS
 # ============================================================================
 
-def render_streaming_display(stable_text: str, latest_chunk: str, is_active: bool = True) -> str:
+AUTOSCROLL_TRIGGER_HTML = (
+    '<span class="sop-autoscroll-anchor" id="sop-chat-bottom-anchor"></span>'
+    '<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" '
+    'class="sop-autoscroll-trigger" alt="" style="display:none;" '
+    'onload="try{(function(){var w=window.parent||window;'
+    'if(!w._sopScrollInit){w._sopScrollInit=true;w._sopUserScrolledUp=false;'
+    'var gc=function(){return(w.document?w.document.querySelector(\'.main\'):null)||document.querySelector(\'.main\')||document.documentElement;};'
+    'var os=function(){var c=gc();if(!c)return;var d=c.scrollHeight-c.scrollTop-c.clientHeight;w._sopUserScrolledUp=(d>80);};'
+    'var c=gc();if(c)c.addEventListener(\'scroll\',os,{passive:true});w.addEventListener(\'scroll\',os,{passive:true});}'
+    'if(!w._sopUserScrolledUp){var c=(w.document?w.document.querySelector(\'.main\'):null)||document.querySelector(\'.main\')||document.documentElement;'
+    'if(c)c.scrollTo({top:c.scrollHeight,behavior:\'smooth\'});}})();}catch(e){}" />'
+)
+
+
+class AutoScrollController:
+    """
+    Manages continuous chat auto-scrolling state for progressive streaming:
+    - Tracks whether auto-scroll is actively enabled for the current streaming turn.
+    - Generates lightweight, scoped client-side triggers during active generation.
+    - Suppresses scrolling upon stream completion, cancellation, or error.
+    - Employs distance-to-bottom threshold (80px) to pause when the user scrolls upward.
+    """
+    SCROLL_THRESHOLD_PX = 80
+
+    def __init__(self, enabled: bool = True):
+        self.enabled = enabled
+        self.is_active = False
+
+    def start(self):
+        self.is_active = True
+
+    def stop(self):
+        self.is_active = False
+
+    def get_trigger_html(self) -> str:
+        if not self.enabled or not self.is_active:
+            return ""
+        return AUTOSCROLL_TRIGGER_HTML
+
+    @staticmethod
+    def should_pause(distance_to_bottom: float, threshold: float = 80.0) -> bool:
+        """Determines if auto-scroll should pause based on user scroll offset from bottom."""
+        return distance_to_bottom > threshold
+
+
+def render_streaming_display(
+    stable_text: str,
+    latest_chunk: str,
+    is_active: bool = True,
+    auto_scroll: bool = True
+) -> str:
     """
     Constructs progressive streaming Markdown / HTML display:
     - stable_text: Established accumulated text, rendered statically without animation.
     - latest_chunk: Newly arrived token batch, wrapped in a fade-in span when safe.
-    - is_active: Whether generation is currently active (appends typing cursor).
+    - is_active: Whether generation is currently active (appends typing cursor & scroll trigger).
+    - auto_scroll: Whether to append the client-side auto-scroll trigger.
     """
     cursor_html = '<span class="typing-cursor"></span>'
+    scroll_html = AUTOSCROLL_TRIGGER_HTML if (is_active and auto_scroll) else ""
+
     if not is_active:
         return (stable_text + latest_chunk).strip()
 
     full_text = stable_text + latest_chunk
     if not full_text:
-        return cursor_html
+        return f"{cursor_html}{scroll_html}"
 
     # Check for formatting characters where wrapping would break block-level markdown
     has_markdown_symbols = any(sym in latest_chunk for sym in ["\n", "```", "`", "**", "*", "#", "|", "[", "]"])
 
     if not has_markdown_symbols and latest_chunk:
-        return f"{stable_text}<span class=\"streaming-fade-in\">{latest_chunk}</span>{cursor_html}"
+        return f"{stable_text}<span class=\"streaming-fade-in\">{latest_chunk}</span>{cursor_html}{scroll_html}"
     else:
-        return f"{full_text}{cursor_html}"
+        return f"{full_text}{cursor_html}{scroll_html}"
 
 
 class SmoothStreamAccumulator:
@@ -389,16 +463,20 @@ class SmoothStreamAccumulator:
     - Emits first visible content immediately upon arrival (zero startup delay).
     - Batches subsequent tokens to prevent high-frequency DOM re-renders and UI flicker.
     - Flushes on natural boundaries (punctuation, newlines) or time thresholds (~45ms).
+    - Coordinates auto-scroll triggers with client-side scroll position awareness.
     """
     def __init__(
         self,
         min_batch_chars: int = 8,
         min_batch_tokens: int = 3,
-        min_interval_sec: float = 0.045
+        min_interval_sec: float = 0.045,
+        enable_auto_scroll: bool = True
     ):
         self.min_batch_chars = min_batch_chars
         self.min_batch_tokens = min_batch_tokens
         self.min_interval_sec = min_interval_sec
+        self.enable_auto_scroll = enable_auto_scroll
+        self.scroll_controller = AutoScrollController(enabled=enable_auto_scroll)
         self.full_response = ""
         self.stable_text = ""
         self.pending_tokens: List[str] = []
@@ -445,16 +523,22 @@ class SmoothStreamAccumulator:
 
     def get_display_html(self, is_active: bool = True) -> str:
         """
-        Constructs the streaming display HTML with cursor and fade-in span,
+        Constructs the streaming display HTML with cursor, fade-in span, and auto-scroll trigger,
         advancing stable_text to the current clean output.
         """
         clean_preview = re.sanitize_model_output(self.full_response)
         pending_chunk = "".join(self.pending_tokens)
 
+        if is_active:
+            self.scroll_controller.start()
+        else:
+            self.scroll_controller.stop()
+
         html = render_streaming_display(
             stable_text=self.stable_text,
             latest_chunk=pending_chunk,
-            is_active=is_active
+            is_active=is_active,
+            auto_scroll=self.enable_auto_scroll
         )
 
         if is_active:
@@ -467,7 +551,8 @@ class SmoothStreamAccumulator:
         return html
 
     def get_final_text(self, interrupted: bool = False) -> str:
-        """Returns the final sanitized plain markdown text without cursor or spans."""
+        """Returns the final sanitized plain markdown text without cursor, spans, or scroll triggers."""
+        self.scroll_controller.stop()
         clean = re.sanitize_model_output(self.full_response)
         if interrupted and not clean.endswith("]*"):
             clean += "\n\n*[Generation stopped by user]*"
@@ -529,7 +614,8 @@ with st.sidebar:
         [
             "💬 Technical Consultation Chat",
             "⚖️ SOP Revision Comparison Engine",
-            "🔗 Cross-Document Impact Analysis"
+            "🔗 Cross-Document Impact Analysis",
+            "🧩 Visual & Tabular Component Explorer"
         ],
         index=0,
         key="app_mode_radio"
@@ -592,33 +678,51 @@ with st.sidebar:
         st.markdown("#### 🔍 Retrieval Filters")
         top_k = st.slider("Top Evidence Passages (Top-K):", min_value=1, max_value=8, value=5)
 
+        available_cats = ["All Categories"] + re.get_indexed_categories()
         category_filter = st.selectbox(
             "SOP Category Filter:",
-            [
-                "All Categories",
-                "HVF_SOP_1_Hull_Welding",
-                "HVF_SOP_2_Turret_Integration",
-                "HVF_SOP_3_Engine_Alignment",
-                "HVF_SOP_4_Torsion_Suspension",
-                "HVF_SOP_5_Gun_Calibration"
-            ]
+            available_cats
         )
         filter_logical_id = None if category_filter == "All Categories" else category_filter
 
-        revision_filter = st.selectbox(
-            "Revision Scope:",
-            ["All Revisions (Cross-Comparison)", "Baseline v1 Only", "Revision v2 Only"]
-        )
-        filter_rev = None
-        if revision_filter == "Baseline v1 Only":
-            filter_rev = "Rev 4." if category_filter == "HVF_SOP_1_Hull_Welding" else "2026"
-        elif revision_filter == "Revision v2 Only":
-            filter_rev = "Version 2"
+        if "revision_preference" not in st.session_state:
+            st.session_state["revision_preference"] = REVISION_CHOICES[0]
 
+        curr_pref = st.session_state.get("revision_preference", REVISION_CHOICES[0])
+        pref_idx = REVISION_CHOICES.index(curr_pref) if curr_pref in REVISION_CHOICES else 0
+
+        selected_rev_pref = st.selectbox(
+            "SOP Revision Scope:",
+            REVISION_CHOICES,
+            index=pref_idx,
+            key="revision_scope_select",
+            help="Select whether to retrieve from latest revised SOPs (V2), baseline SOPs (V1), or search all revisions with V2 prioritized."
+        )
+        st.session_state["revision_preference"] = selected_rev_pref
+
+        # Determine retrieval mode from validated preference
+        if selected_rev_pref.startswith("V2"):
+            rev_mode_val = "v2"
+        elif selected_rev_pref.startswith("V1"):
+            rev_mode_val = "v1"
+        else:
+            rev_mode_val = "all"
+
+        st.divider()
+    elif app_mode == "🧩 Visual & Tabular Component Explorer":
+        st.markdown("#### 🧩 Component Explorer")
+        st.caption("Inspecting multi-source SOP component intelligence.")
+        st.markdown(
+            "• Tables & technical matrices  \n"
+            "• Visual diagrams & illustrations  \n"
+            "• Callouts & stage-gate warnings  \n"
+            "• Executive summaries  \n"
+            "• Uncertainty profiling"
+        )
         st.divider()
     else:
         st.markdown("#### ⚖️ Revision Engine")
-        st.caption("Operating in Revision Comparison Mode.")
+        st.caption("Operating in Revision Comparison / Impact Analysis Mode.")
         st.markdown(
             "• Deterministic section alignment  \n"
             "• Numerical tolerance shifts  \n"
@@ -630,6 +734,20 @@ with st.sidebar:
 
     # --- Corpus Sync / Rebuild Button ---
     with st.expander("⚙️ Vector Database Management"):
+        health = re.verify_faiss_index_health()
+        status_color = "🟢 Healthy" if health.get("is_healthy") else "🔴 Attention Needed"
+        st.markdown(f"**Index Health:** `{status_color}`")
+        st.caption(
+            f"• Total Vectors: **{health.get('total_vectors', 0)}** (Dim: {health.get('embedding_dimension', 768)})  \n"
+            f"• Baseline SOP Documents: **{len(health.get('baseline_documents', []))}** ({health.get('baseline_chunks_count', 0)} chunks)  \n"
+            f"• Uploaded Documents: **{len(health.get('uploaded_documents', []))}** ({health.get('uploaded_chunks_count', 0)} chunks)"
+        )
+        if health.get("uploaded_documents"):
+            st.caption("Indexed Uploads: " + ", ".join([f"`{d}`" for d in health["uploaded_documents"]]))
+        if health.get("issues"):
+            for issue in health["issues"]:
+                st.warning(f"⚠️ {issue}")
+        st.divider()
         st.caption("Re-scans `SOP/` directory, extracts text, generates 768-dim embeddings, and persists FAISS index.")
         if st.button("🔄 Rebuild FAISS Corpus", use_container_width=True):
             with st.spinner("Rebuilding FAISS index from 10 SOP PDFs..."):
@@ -688,7 +806,20 @@ if not telemetry.get("db_ready", False):
 
 if app_mode == "💬 Technical Consultation Chat":
     with st.expander("📥 Ingest New SOP Document (PDF Upload & Indexing)", expanded=False):
-        st.markdown("Upload official HVF/AVNL technical documents to extract sections, generate embeddings, and incrementally index into FAISS.")
+        st.markdown(
+            "Upload official HVF/AVNL technical documents to extract sections, generate 768-dim embeddings, "
+            "and incrementally index into FAISS with transactional integrity and duplicate protection."
+        )
+
+        # Vector health summary indicator
+        current_health = re.verify_faiss_index_health()
+        health_icon = "🟢" if current_health.get("is_healthy") else "🔴"
+        st.caption(
+            f"📊 **Index Health**: {health_icon} `{current_health.get('total_vectors', 0)}` chunks "
+            f"({current_health.get('baseline_chunks_count', 0)} baseline, {current_health.get('uploaded_chunks_count', 0)} uploaded) "
+            f"across `{current_health.get('total_documents', 0)}` documents."
+        )
+
         uploaded_files = st.file_uploader(
             "Select SOP PDF File(s):",
             type=["pdf"],
@@ -704,30 +835,143 @@ if app_mode == "💬 Technical Consultation Chat":
 
                 success_count = 0
                 for uploaded_file in uploaded_files:
+                    file_bytes = uploaded_file.getbuffer()
+                    file_size_kb = round(len(file_bytes) / 1024, 1)
                     save_path = os.path.join(upload_dir, uploaded_file.name)
                     with open(save_path, "wb") as f:
-                        f.write(uploaded_file.getbuffer())
+                        f.write(file_bytes)
 
-                    with st.spinner(f"Processing and chunking `{uploaded_file.name}`..."):
+                    with st.status(f"Ingesting `{uploaded_file.name}` ({file_size_kb} KB)...", expanded=True) as status_box:
+                        # Stage 1: PDF Extracted
+                        st.write("📄 **Stage 1 [PDF Extracted]**: Extracting text pages (digital stream with OCR fallback)...")
                         doc_record = dp.process_pdf(save_path)
 
-                    if doc_record.get("status") == "success":
-                        st.success(
-                            f"✅ Extracted **{doc_record['document_id']}** ({doc_record['document_title']}) — "
-                            f"{doc_record['total_pages']} pages, {doc_record['total_chunks']} chunks."
+                        if doc_record.get("status") != "success":
+                            st.error(f"❌ Extraction error: {doc_record.get('status')}")
+                            status_box.update(label=f"❌ Failed to extract `{uploaded_file.name}`", state="error", expanded=True)
+                            continue
+
+                        st.write(
+                            f"✅ **Stage 1 [PDF Extracted]**: Extracted **{doc_record['total_pages']}** pages "
+                            f"and created **{doc_record['total_chunks']}** semantic chunks."
                         )
-                        with st.spinner(f"Generating embeddings and indexing `{uploaded_file.name}` into FAISS..."):
-                            idx_summary = re.index_documents([doc_record], replace_existing=True)
-                        st.info(f"Indexed {idx_summary['indexed_chunks']} chunks in {idx_summary['embedding_duration_s']}s.")
-                        success_count += 1
+
+                        # Stage 2: FAISS Indexing Completed
+                        st.write("🗄️ **Stage 2 [FAISS Indexing Completed]**: Generating 768-dim embeddings and inserting into FAISS...")
+                        try:
+                            idx_summary = re.index_chunks(
+                                doc_record.get("chunks", []),
+                                replace_existing=True
+                            )
+                            st.write(f"✅ **Stage 2 [FAISS Indexing Completed]**: Indexed **{idx_summary['indexed_chunks']}** chunks ({idx_summary['embedding_duration_s']}s).")
+                        except Exception as e:
+                            st.error(f"❌ Indexing error: {e}")
+                            status_box.update(label=f"❌ Failed to index `{uploaded_file.name}`", state="error", expanded=True)
+                            continue
+
+                        # Stage 3: Component Extraction Completed
+                        st.write("🧩 **Stage 3 [Component Extraction Completed]**: Extracting visual, tabular, and physical components with entity classification...")
+                        comp_status = doc_record.get("component_extraction_status", "success")
+                        comps_to_persist = doc_record.get("components", [])
+
+                        if comp_status != "success":
+                            st.warning(f"⚠️ Stage 3: Component extraction encountered an issue: {comp_status}")
+                            comp_success = False
+                        else:
+                            st.write(f"✅ **Stage 3 [Component Extraction Completed]**: Extracted **{len(comps_to_persist)}** classified component records.")
+                            comp_success = True
+
+                        # Stage 4: Component Metadata Persisted
+                        st.write("💾 **Stage 4 [Component Metadata Persisted]**: Persisting component metadata to `components_metadata.json`...")
+                        if comp_success and comps_to_persist:
+                            save_ok = re.save_document_components(
+                                document_id=doc_record["document_id"],
+                                filename=uploaded_file.name,
+                                components=comps_to_persist
+                            )
+                            if save_ok:
+                                st.write("✅ **Stage 4 [Component Metadata Persisted]**: Atomically persisted component metadata on disk.")
+                            else:
+                                st.warning("⚠️ Stage 4: Failed to persist component metadata.")
+                                comp_success = False
+                        else:
+                            st.write("⚠️ **Stage 4 [Component Metadata Persisted]**: Component persistence skipped due to extraction issue (pending retry).")
+
+                        # Stage 5: Ready for Component Questions
+                        if comp_success:
+                            st.write("🚀 **Stage 5 [Ready for Component Questions]**: Document fully indexed and ready for technical consultation and Component Explorer inspection!")
+                            status_box.update(label=f"✅ `{uploaded_file.name}` Ingested and Component Integrated Successfully!", state="complete", expanded=False)
+                        else:
+                            st.write("ℹ️ **Stage 5 [Ready for General Questions]**: Chunks indexed in FAISS for text queries; component extraction ready for retry.")
+                            status_box.update(label=f"⚠️ `{uploaded_file.name}` Chunks Indexed (Component Retry Available)", state="warning", expanded=True)
+
+                    # Ingested Document Summary Card
+                    st.markdown(f"#### 📋 Ingestion Summary: `{uploaded_file.name}`")
+                    col_s1, col_s2, col_s3, col_s4 = st.columns(4)
+                    with col_s1:
+                        st.metric("Document ID", doc_record.get("document_id", "N/A"))
+                    with col_s2:
+                        st.metric("Revision", doc_record.get("revision", "N/A")[:18])
+                    with col_s3:
+                        st.metric("Total Pages", doc_record.get("total_pages", 0))
+                    with col_s4:
+                        st.metric("Chunks Indexed", idx_summary.get("indexed_chunks", 0))
+
+                    st.markdown(
+                        f"- **Filename**: `{doc_record.get('filename')}`  \n"
+                        f"- **Document Title**: {doc_record.get('document_title')}  \n"
+                        f"- **Logical SOP Category**: `{doc_record.get('logical_sop_id')}`  \n"
+                        f"- **Extracted Chunks**: `{doc_record.get('total_chunks')}`  \n"
+                        f"- **Embedded & Indexed Chunks**: `{idx_summary.get('indexed_chunks')}`  \n"
+                        f"- **Extracted Components**: `{len(comps_to_persist)}` (Status: `{comp_status}`)  \n"
+                        f"- **Index Persistence**: `✅ Verified On Disk (sop_index.faiss, chunk_metadata.json, components_metadata.json)`"
+                    )
+
+                    # Retry Component Extraction Button if needed
+                    if not comp_success or doc_record.get("component_extraction_status") != "success":
+                        st.warning(f"⚠️ Component extraction for `{uploaded_file.name}` is incomplete.")
+                        if st.button(f"🔄 Retry Component Extraction for `{uploaded_file.name}`", key=f"retry_{uploaded_file.name}"):
+                            ret_res = re.retry_component_extraction(
+                                pdf_path=save_path,
+                                document_id=doc_record.get("document_id"),
+                                filename=uploaded_file.name,
+                                revision=doc_record.get("revision")
+                            )
+                            if ret_res.get("status") == "success":
+                                st.success(f"🎉 Successfully extracted and persisted {ret_res.get('extracted_count')} components!")
+                                time.sleep(0.5)
+                                st.rerun()
+                            else:
+                                st.error(f"❌ Retry failed: {ret_res.get('status')}")
+
+                    # Post-Ingestion Immediate Retrieval Verification
+                    test_query = (
+                        doc_record.get("document_title")
+                        if doc_record.get("document_title") and doc_record["document_title"] != "UNKNOWN"
+                        else (doc_record["chunks"][0]["chunk_text"][:80] if doc_record.get("chunks") else "SOP")
+                    )
+                    verif_res = re.verify_retrieval_for_document(
+                        query=test_query,
+                        expected_identifier=doc_record["document_id"],
+                        top_k=5,
+                        revision_mode="v2"
+                    )
+                    if verif_res["is_retrieved"]:
+                        st.success(
+                            f"🎯 **Post-Ingestion Retrieval Verification**: Successfully retrieved document "
+                            f"in top search results (Rank #{verif_res['best_rank']} | Cosine Similarity: `{verif_res['best_score']}`)."
+                        )
                     else:
-                        st.error(f"❌ Failed to process `{uploaded_file.name}`: {doc_record.get('status')}")
+                        st.info(
+                            f"ℹ️ Retrieval Verification: Document persisted in index (total vectors: {idx_summary['total_index_chunks']})."
+                        )
+
+                    success_count += 1
+                    st.divider()
 
                 if success_count > 0:
                     st.cache_data.clear()
-                    st.success(f"🎉 Successfully ingested {success_count} document(s) into the FAISS index!")
-                    time.sleep(1.5)
-                    st.rerun()
+                    st.success(f"🎉 Successfully ingested and verified {success_count} document(s) into the FAISS index!")
 
     # --- Conversation Display Area ---
     active_cid = st.session_state["current_conv_id"]
@@ -736,6 +980,10 @@ if app_mode == "💬 Technical Consultation Chat":
         active_conv = db.create_conversation("New Consultation", conv_id=active_cid)
 
     messages = db.get_conversation_messages(active_cid)
+
+    # Visibly display active revision retrieval scope
+    active_scope_label = st.session_state.get("revision_preference", REVISION_CHOICES[0])
+    st.caption(f"🎯 **Active Retrieval Scope**: `{active_scope_label}`")
 
     # Render empty conversation prompt if no messages
     if not messages:
@@ -792,7 +1040,7 @@ if app_mode == "💬 Technical Consultation Chat":
         with st.chat_message("assistant", avatar="🛡️"):
             response_placeholder = st.empty()
             # Immediate active typing indicator while retrieval and model start
-            response_placeholder.markdown('<span class="typing-cursor"></span>', unsafe_allow_html=True)
+            response_placeholder.markdown('<span class="typing-cursor"></span>' + AUTOSCROLL_TRIGGER_HTML, unsafe_allow_html=True)
             accumulator = SmoothStreamAccumulator()
             stream_citations: List[Dict[str, Any]] = []
             generation_interrupted = False
@@ -802,7 +1050,7 @@ if app_mode == "💬 Technical Consultation Chat":
                     question=user_input,
                     top_k=top_k,
                     logical_sop_id=filter_logical_id,
-                    revision=filter_rev,
+                    revision_mode=rev_mode_val,
                     conversation_history=messages
                 )
 
@@ -829,6 +1077,7 @@ if app_mode == "💬 Technical Consultation Chat":
             finally:
                 st.session_state["is_generating"] = False
                 st.session_state["stop_requested"] = False
+                accumulator.scroll_controller.stop()
 
             clean_text = accumulator.get_final_text(interrupted=generation_interrupted)
             response_placeholder.markdown(clean_text)
@@ -842,6 +1091,8 @@ if app_mode == "💬 Technical Consultation Chat":
             )
 
             if stream_citations:
+                if info.get("is_cross_revision", False):
+                    st.caption("ℹ️ *Evidence retrieved spans multiple revisions (Baseline V1 and Revised V2).*")
                 render_compact_evidence_sources(stream_citations)
 
         st.rerun()
@@ -952,7 +1203,7 @@ elif app_mode == "⚖️ SOP Revision Comparison Engine":
                         st.markdown("**Updated Specification (Revised):**")
                         st.markdown(f"```text\n{chg['revised_passage'] if chg['revised_passage'] else '[Section removed in revision]'}\n```")
 
-else:
+elif app_mode == "🔗 Cross-Document Impact Analysis":
     # ========================================================================
     # CROSS-DOCUMENT IMPACT ANALYSIS ENGINE VIEW (PHASE 8)
     # ========================================================================
@@ -1122,4 +1373,191 @@ else:
                             cand["is_human_reviewed"] = True
                             st.success(f"Decision for {cid} updated to `{new_decision}`!")
                             st.rerun()
+
+elif app_mode == "🧩 Visual & Tabular Component Explorer":
+    # ========================================================================
+    # SOP VISUAL & TABULAR COMPONENT INTELLIGENCE EXPLORER (MINI PHASE 2)
+    # ========================================================================
+    st.markdown('<h2 style="color: #1E3A8A; font-weight: 700;">🧩 SOP Visual & Tabular Component Intelligence Explorer</h2>', unsafe_allow_html=True)
+    st.markdown(
+        "Inspect multi-source engineering component intelligence extracted across official and uploaded SOPs. "
+        "Extracts from technical matrices, visual diagrams, labelled figures, stage-gate callouts, "
+        "and executive summaries with complete provenance and uncertainty tracking."
+    )
+
+    all_comps = re.load_components_metadata()
+    if not all_comps:
+        st.info("ℹ️ No components currently loaded in `data/faiss_index/components_metadata.json`. Ingesting or rebuilding documents will populate component metadata.")
+    else:
+        # Document choices
+        all_docs = sorted(list({c.get("filename", "") for c in all_comps if c.get("filename")}))
+        doc_options = ["All Documents"] + all_docs
+
+        # Filters
+        c_col0, c_col1, c_col2, c_col3, c_col4 = st.columns(5)
+        with c_col0:
+            entity_filter_options = [
+                "Physical Components & Assemblies (Default)",
+                "All Extracted Entities (Unfiltered)",
+                "PHYSICAL_COMPONENT",
+                "ASSEMBLY",
+                "SUBSYSTEM",
+                "MATERIAL",
+                "TOOL_OR_INSTRUMENT",
+                "TECHNICAL_PARAMETER",
+                "ACCEPTANCE_CRITERION",
+                "PROCESS_OR_OPERATION",
+                "DOCUMENT_OR_CERTIFICATE",
+                "OTHER_REFERENCE"
+            ]
+            selected_entity = st.selectbox("Entity Classification:", entity_filter_options, index=0, key="comp_entity_sel")
+        with c_col1:
+            selected_doc = st.selectbox("Select SOP Document:", doc_options, key="comp_doc_sel")
+        with c_col2:
+            all_subs = ["All Subsystems"] + sorted(list({c.get("subsystem", "") for c in all_comps if c.get("subsystem")}))
+            selected_sub = st.selectbox("Subsystem Filter:", all_subs, key="comp_sub_sel")
+        with c_col3:
+            source_options = [
+                "All Sources",
+                "physical_component (Physical Components)",
+                "assembly (Major Assemblies)",
+                "table (Tabular Matrices)",
+                "diagram_figure (Visual Figures & Diagrams)",
+                "callout_box (Stage-Gate Warnings & Callouts)",
+                "heading (Section Headings)"
+            ]
+            selected_src_raw = st.selectbox("Source Type Filter:", source_options, key="comp_src_sel")
+            selected_src = selected_src_raw.split(" ")[0] if selected_src_raw != "All Sources" else "All Sources"
+        with c_col4:
+            unc_options = ["All Records", "Verified High-Confidence Only", "Uncertain / Verification Required Only"]
+            selected_unc = st.selectbox("Uncertainty Status:", unc_options, key="comp_unc_sel")
+
+        # Keyword Search
+        comp_search_kw = st.text_input("🔍 Search Components, Specifications, Tooling, or Acceptance Criteria:", "", key="comp_search_kw")
+
+        # Filtering logic
+        filtered_comps = all_comps
+        if selected_entity == "Physical Components & Assemblies (Default)":
+            filtered_comps = [c for c in filtered_comps if c.get("entity_type") in ("PHYSICAL_COMPONENT", "ASSEMBLY", "SUBSYSTEM")]
+        elif selected_entity != "All Extracted Entities (Unfiltered)":
+            filtered_comps = [c for c in filtered_comps if c.get("entity_type") == selected_entity]
+
+        if selected_doc != "All Documents":
+            filtered_comps = [c for c in filtered_comps if c.get("filename") == selected_doc]
+        if selected_sub != "All Subsystems":
+            filtered_comps = [c for c in filtered_comps if c.get("subsystem") == selected_sub]
+        if selected_src != "All Sources":
+            filtered_comps = [c for c in filtered_comps if c.get("source_type") == selected_src]
+        if selected_unc == "Verified High-Confidence Only":
+            filtered_comps = [c for c in filtered_comps if not c.get("is_uncertain", False)]
+        elif selected_unc == "Uncertain / Verification Required Only":
+            filtered_comps = [c for c in filtered_comps if c.get("is_uncertain", False)]
+
+        if comp_search_kw.strip():
+            kw_tokens = [t.lower() for t in comp_search_kw.strip().split() if len(t) >= 2]
+            scored_filtered = []
+            for c in filtered_comps:
+                searchable = " ".join([
+                    str(c.get("component_name", "")),
+                    str(c.get("simple_description", "")),
+                    str(c.get("primary_function", "")),
+                    str(c.get("material_or_construction", "")),
+                    str(c.get("technical_specifications", "")),
+                    str(c.get("tooling_or_metrology", "")),
+                    str(c.get("acceptance_criteria", "")),
+                    str(c.get("subsystem", "")),
+                    str(c.get("callout_warning", ""))
+                ]).lower()
+                matches = sum(1 for tok in kw_tokens if tok in searchable)
+                if matches > 0:
+                    scored_filtered.append((matches, c))
+            scored_filtered.sort(key=lambda x: x[0], reverse=True)
+            filtered_comps = [item[1] for item in scored_filtered]
+
+        # Metric summary row
+        st.divider()
+        m1, m2, m3, m4, m5 = st.columns(5)
+        with m1:
+            st.metric("Total Records", len(filtered_comps))
+        with m2:
+            st.metric("Physical Components", sum(1 for c in filtered_comps if c.get("entity_type") == "PHYSICAL_COMPONENT"))
+        with m3:
+            st.metric("Assemblies & Subsystems", sum(1 for c in filtered_comps if c.get("entity_type") in ("ASSEMBLY", "SUBSYSTEM")))
+        with m4:
+            st.metric("Directly Stated", sum(1 for c in filtered_comps if c.get("evidence_status") == "DIRECTLY_STATED"))
+        with m5:
+            st.metric("Uncertain Flags", sum(1 for c in filtered_comps if c.get("is_uncertain", False)))
+
+        st.caption(f"Displaying **{len(filtered_comps)}** classified record(s):")
+
+        # Component Cards
+        for comp in filtered_comps:
+            e_type = comp.get("entity_type", "OTHER_REFERENCE")
+            is_phy = e_type in ("PHYSICAL_COMPONENT", "ASSEMBLY", "SUBSYSTEM")
+            src_type = comp.get("source_type", "component")
+            is_unc = comp.get("is_uncertain", False)
+            ev_status = comp.get("evidence_status", "DIRECTLY_STATED")
+            unc_badge = "⚠️ [UNCERTAIN]" if is_unc else f"✅ [{ev_status}]"
+            
+            icon = "🧩" if e_type == "PHYSICAL_COMPONENT" else ("📦" if e_type == "ASSEMBLY" else ("🏗️" if e_type == "SUBSYSTEM" else ("📏" if e_type == "TECHNICAL_PARAMETER" else ("🔧" if e_type == "TOOL_OR_INSTRUMENT" else ("🧪" if e_type == "MATERIAL" else "📑")))))
+            header_str = f"{icon} [{comp.get('component_id', 'CMP')}] {comp.get('component_name')} — [{e_type}] {unc_badge}"
+
+            with st.expander(header_str, expanded=False):
+                if is_unc:
+                    st.warning(f"⚠️ **Uncertainty Notice**: {comp.get('uncertainty_reason', 'Low OCR confidence / visual details ambiguous. Marked for verification without inventing data.')}")
+
+                if is_phy:
+                    if comp.get("simple_description"):
+                        st.info(f"💡 **Description**: {comp.get('simple_description')}")
+                    if comp.get("primary_function"):
+                        st.markdown(f"⚙️ **Primary Vehicle Function**: {comp.get('primary_function')}")
+
+                    col_l, col_r = st.columns(2)
+                    with col_l:
+                        st.markdown(f"**Parent Subsystem:** `{comp.get('parent_subsystem', comp.get('subsystem', 'N/A'))}`")
+                        st.markdown(f"**Material / Construction:** `{comp.get('material_or_construction', 'Not specified in SOP')}`")
+                        st.markdown(f"**Location / Operational Use:** `{comp.get('location_or_use', 'Not specified in SOP')}`")
+                        if comp.get("alternative_names"):
+                            alts = ", ".join([f"`{a}`" for a in comp["alternative_names"] if a != comp.get("component_name")])
+                            if alts:
+                                st.markdown(f"**Alternative Names:** {alts}")
+
+                    with col_r:
+                        st.markdown(f"**Evidence Provenance:** `{comp.get('document_id', 'N/A')}` ({comp.get('revision', 'N/A')[:20]})")
+                        st.markdown(f"**Source Document:** `{comp.get('source_filename', comp.get('filename', 'N/A'))}` (Page {comp.get('page_number', 'N/A')})")
+                        st.markdown(f"**Section Reference:** *{comp.get('section_reference', 'N/A')}*")
+                        if comp.get("interacts_with"):
+                            interacts = ", ".join([f"`{i}`" for i in comp["interacts_with"]])
+                            st.markdown(f"**Interacts With:** {interacts}")
+
+                    # Validated Relationships
+                    rels = comp.get("relationships", [])
+                    if rels:
+                        st.markdown("#### 🔗 Validated Component Relationships")
+                        for r in rels:
+                            st.markdown(
+                                f"- **`{r.get('relationship_type', 'CONNECTED_TO')}`** ➔ **{r.get('target_component', '')}**  \n"
+                                f"  *Citation*: {r.get('source_reference', 'SOP Direct Reference')}"
+                            )
+
+                    if comp.get("supporting_source_passage"):
+                        st.caption(f"**Supporting Source Passage:** {comp.get('supporting_source_passage')}")
+                else:
+                    # Non-physical entities (parameters, tools, materials, etc.)
+                    st.markdown(f"**Entity Classification:** `{e_type}` | **Subsystem:** `{comp.get('subsystem', 'N/A')}` | **Page:** `{comp.get('page_number', 'N/A')}`")
+                    st.markdown(f"**Section Reference:** *{comp.get('section_reference', 'N/A')}*")
+                    
+                    c_p1, c_p2 = st.columns(2)
+                    with c_p1:
+                        st.markdown("**Technical Specifications & Tolerances:**")
+                        st.markdown(f"```text\n{comp.get('technical_specifications', 'Not specified')}\n```")
+                    with c_p2:
+                        st.markdown("**Tooling & Metrology Instruments:**")
+                        st.markdown(f"```text\n{comp.get('tooling_or_metrology', 'Not specified')}\n```")
+
+                    st.markdown(f"**Acceptance Benchmark / Hold Point:** `{comp.get('acceptance_criteria', 'Standard station gate acceptance')}`")
+                    if comp.get("callout_warning"):
+                        st.error(f"🚨 **Stage-Gate Warning**: {comp.get('callout_warning')}")
+
+                    st.caption(f"**Verbatim Evidence Snippet:** {comp.get('raw_context', comp.get('supporting_source_passage', ''))}")
 
