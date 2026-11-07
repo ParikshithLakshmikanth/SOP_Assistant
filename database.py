@@ -628,6 +628,93 @@ def list_impact_reviews(
         return [dict(r) for r in rows]
 
 
+def get_database_health(db_path: str = DEFAULT_DB_PATH) -> Dict[str, Any]:
+    """
+    Performs diagnostic health check on the SQLite database.
+    Verifies disk existence, connection capability, integrity check PRAGMA,
+    table structures, and returns total conversation, message, and review counts.
+    
+    Args:
+        db_path: Path to the SQLite database file.
+        
+    Returns:
+        Dict[str, Any]: Diagnostic report with connectivity, counts, and issues list.
+    """
+    if not os.path.exists(db_path):
+        return {
+            "is_healthy": False,
+            "connected": False,
+            "file_exists": False,
+            "path": db_path,
+            "total_conversations": 0,
+            "total_messages": 0,
+            "total_reviews": 0,
+            "file_size_bytes": 0,
+            "issues": [f"Database file does not exist at '{db_path}'."]
+        }
+
+    issues = []
+    total_convs = 0
+    total_msgs = 0
+    total_reviews = 0
+
+    try:
+        file_size = os.path.getsize(db_path)
+        with get_db(db_path) as conn:
+            cursor = conn.cursor()
+            
+            # 1. SQLite PRAGMA integrity check
+            cursor.execute("PRAGMA integrity_check;")
+            row = cursor.fetchone()
+            if not row or str(row[0]).lower() != "ok":
+                issues.append(f"SQLite PRAGMA integrity check failed: {row[0] if row else 'Empty response'}")
+
+            # 2. Check conversations table
+            try:
+                cursor.execute("SELECT count(*) FROM conversations;")
+                total_convs = cursor.fetchone()[0]
+            except Exception as e_c:
+                issues.append(f"Conversations table query failed: {e_c}")
+
+            # 3. Check messages table
+            try:
+                cursor.execute("SELECT count(*) FROM messages;")
+                total_msgs = cursor.fetchone()[0]
+            except Exception as e_m:
+                issues.append(f"Messages table query failed: {e_m}")
+
+            # 4. Check impact_reviews table
+            try:
+                cursor.execute("SELECT count(*) FROM impact_reviews;")
+                total_reviews = cursor.fetchone()[0]
+            except Exception as e_r:
+                issues.append(f"Impact reviews table query failed: {e_r}")
+
+        return {
+            "is_healthy": len(issues) == 0,
+            "connected": True,
+            "file_exists": True,
+            "path": db_path,
+            "total_conversations": total_convs,
+            "total_messages": total_msgs,
+            "total_reviews": total_reviews,
+            "file_size_bytes": file_size,
+            "issues": issues
+        }
+    except Exception as e:
+        return {
+            "is_healthy": False,
+            "connected": False,
+            "file_exists": True,
+            "path": db_path,
+            "total_conversations": 0,
+            "total_messages": 0,
+            "total_reviews": 0,
+            "file_size_bytes": 0,
+            "issues": [f"Database connection error: {str(e)}"]
+        }
+
+
 # ============================================================================
 # SELF-TEST & VALIDATION
 # ============================================================================

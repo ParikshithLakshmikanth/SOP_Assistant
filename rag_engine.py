@@ -59,6 +59,20 @@ METADATA_FILENAME = "chunk_metadata.json"
 MANIFEST_FILENAME = "index_manifest.json"
 INDEX_VERSION = "1.0.0"
 
+# Permissible physical and operational relationship predicates
+ALLOWED_RELATIONSHIP_PREDICATES = {
+    "PART_OF",
+    "CONNECTED_TO",
+    "SUPPORTS",
+    "DRIVES",
+    "SEALS",
+    "LUBRICATES",
+    "MEASURES",
+    "CONTROLS",
+    "MOUNTS",
+    "INTERFACES_WITH",
+}
+
 
 # ============================================================================
 # OLLAMA CONNECTION & MODEL DISCOVERY
@@ -987,8 +1001,10 @@ def search_components(
     subsystem: Optional[str] = None,
     source_type: Optional[str] = None,
     entity_type: Optional[str] = None,
+    revision_mode: Optional[str] = None,
+    document_filter: Optional[str] = None,
     is_uncertain: Optional[bool] = None,
-    top_k: int = 25,
+    top_k: int = 50,
     index_dir: str = DEFAULT_INDEX_DIR
 ) -> List[Dict[str, Any]]:
     """
@@ -1003,6 +1019,25 @@ def search_components(
     scored = []
 
     for c in comps:
+        # Document filter
+        if document_filter and document_filter != "All Documents" and document_filter != "All SOP Documents":
+            df_norm = document_filter.strip().lower()
+            c_fn = str(c.get("filename") or c.get("source_filename") or "").strip().lower()
+            c_docid = str(c.get("document_id") or "").strip().lower()
+            c_lsop = str(c.get("logical_sop_id") or "").strip().lower()
+            if df_norm not in (c_fn, c_docid, c_lsop) and df_norm not in c_fn:
+                continue
+
+        # Revision filter
+        if revision_mode:
+            rev_m = revision_mode.strip().lower()
+            if rev_m in ("v1", "v1 (baseline / archival)", "baseline", "v1_only"):
+                if not is_v1_component(c):
+                    continue
+            elif rev_m in ("v2", "v2 (active / revised)", "revised", "v2_only"):
+                if not is_v2_component(c):
+                    continue
+
         # Subsystem filter
         if subsystem and subsystem != "All Subsystems" and c.get("subsystem") != subsystem:
             continue
@@ -1044,6 +1079,330 @@ def search_components(
 
     scored.sort(key=lambda x: x[0], reverse=True)
     return [item[1] for item in scored[:top_k]]
+
+
+def filter_components(
+    components: Optional[List[Dict[str, Any]]] = None,
+    doc_filter: Optional[str] = None,
+    revision_filter: Optional[str] = None,
+    subsystem_filter: Optional[str] = None,
+    entity_type_filter: Optional[str] = None,
+    uncertainty_filter: Optional[str] = None,
+    search_keyword: Optional[str] = None,
+    index_dir: str = DEFAULT_INDEX_DIR
+) -> List[Dict[str, Any]]:
+    """
+    Deterministic filtering for Component Explorer across document, revision,
+    subsystem, entity classification, uncertainty status, and search keywords.
+    """
+    if components is None:
+        components = load_components_metadata(index_dir)
+
+    if not components:
+        return []
+
+    filtered = list(components)
+
+    # 1. Document Filter
+    if doc_filter and doc_filter not in ("All Documents", "All SOP Documents", "All"):
+        df_clean = doc_filter.strip().lower()
+        filtered = [
+            c for c in filtered
+            if df_clean in str(c.get("logical_sop_id", "")).lower()
+            or df_clean in str(c.get("filename", "")).lower()
+            or df_clean in str(c.get("source_filename", "")).lower()
+            or df_clean in str(c.get("document_id", "")).lower()
+        ]
+
+    # 2. Revision Filter
+    if revision_filter and revision_filter not in ("All Revisions", "All"):
+        rf_clean = revision_filter.strip().lower()
+        if "v1" in rf_clean or "baseline" in rf_clean:
+            filtered = [c for c in filtered if is_v1_component(c)]
+        elif "v2" in rf_clean or "revised" in rf_clean or "active" in rf_clean:
+            filtered = [c for c in filtered if is_v2_component(c)]
+
+    # 3. Subsystem Filter
+    if subsystem_filter and subsystem_filter not in ("All Subsystems", "All"):
+        sf_clean = subsystem_filter.strip().lower()
+        filtered = [
+            c for c in filtered
+            if sf_clean == str(c.get("subsystem", "")).strip().lower()
+            or sf_clean == str(c.get("parent_subsystem", "")).strip().lower()
+        ]
+
+    # 4. Entity Type Filter (Default: Physical Components, Assemblies & Subsystems)
+    if entity_type_filter and entity_type_filter not in ("All Entity Types", "All Extracted Entities (Unfiltered)", "All"):
+        if entity_type_filter in (
+            "Physical Components & Assemblies (Default)",
+            "Physical Components, Assemblies & Subsystems (Default)",
+            "Physical Components & Assemblies",
+            "PHYSICAL_COMPONENTS_ONLY"
+        ):
+            filtered = [c for c in filtered if c.get("entity_type") in ("PHYSICAL_COMPONENT", "ASSEMBLY", "SUBSYSTEM")]
+        else:
+            filtered = [c for c in filtered if c.get("entity_type") == entity_type_filter]
+    elif entity_type_filter is None:
+        # Default when unspecified
+        filtered = [c for c in filtered if c.get("entity_type") in ("PHYSICAL_COMPONENT", "ASSEMBLY", "SUBSYSTEM")]
+
+    # 5. Uncertainty / Confidence Filter
+    if uncertainty_filter and uncertainty_filter not in ("All Records", "All Confidence Levels", "All"):
+        if "High-Confidence" in uncertainty_filter:
+            filtered = [c for c in filtered if not c.get("is_uncertain", False)]
+        elif "Uncertain" in uncertainty_filter:
+            filtered = [c for c in filtered if c.get("is_uncertain", False)]
+        elif "Directly Stated" in uncertainty_filter:
+            filtered = [c for c in filtered if c.get("evidence_status") == "DIRECTLY_STATED"]
+
+    # 6. Search Keyword
+    if search_keyword and search_keyword.strip():
+        tokens = [t.lower() for t in search_keyword.strip().split() if len(t) >= 2]
+        if tokens:
+            scored = []
+            for c in filtered:
+                searchable = " ".join([
+                    str(c.get("component_name", "")),
+                    str(c.get("simple_description", "")),
+                    str(c.get("primary_function", "")),
+                    str(c.get("entity_type", "")),
+                    str(c.get("material_or_construction", "")),
+                    str(c.get("technical_specifications", "")),
+                    str(c.get("tooling_or_metrology", "")),
+                    str(c.get("acceptance_criteria", "")),
+                    str(c.get("subsystem", "")),
+                    str(c.get("section_reference", "")),
+                    str(c.get("callout_warning", ""))
+                ]).lower()
+                matches = sum(1 for tok in tokens if tok in searchable)
+                if matches > 0:
+                    scored.append((matches, c))
+            scored.sort(key=lambda x: x[0], reverse=True)
+            filtered = [item[1] for item in scored]
+        else:
+            filtered = []
+
+    return filtered
+
+
+def format_component_detail(comp: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Constructs a beginner-friendly structured detail dictionary for a component record,
+    handling missing fields with explicit notes and preserving verifiable source provenance.
+    """
+    name = comp.get("component_name") or "Unnamed Component"
+    entity_type = comp.get("entity_type") or "OTHER_REFERENCE"
+
+    simple_desc = comp.get("simple_description")
+    if not simple_desc or not str(simple_desc).strip():
+        simple_desc = "No simplified explanation documented in SOP source."
+        has_simple_desc = False
+    else:
+        has_simple_desc = True
+
+    primary_func = comp.get("primary_function")
+    if not primary_func or not str(primary_func).strip():
+        primary_func = "No primary vehicle function explicitly documented in SOP source."
+        has_primary_func = False
+    else:
+        has_primary_func = True
+
+    assoc_subsystem = comp.get("parent_subsystem") or comp.get("subsystem")
+    if not assoc_subsystem or not str(assoc_subsystem).strip():
+        assoc_subsystem = "No parent assembly or subsystem explicitly assigned in SOP source."
+        has_assoc_subsystem = False
+    else:
+        has_assoc_subsystem = True
+
+    # Validate relationships (strictly only validated relationships with explicit source_reference)
+    raw_rels = comp.get("relationships") or []
+    validated_rels = []
+    for r in raw_rels:
+        tgt = r.get("target_component")
+        rel_type = r.get("relationship_type", "CONNECTED_TO")
+        src_ref = r.get("source_reference")
+        if tgt and src_ref:
+            validated_rels.append({
+                "source_component": name,
+                "relationship_type": rel_type,
+                "target_component": tgt,
+                "source_reference": src_ref
+            })
+
+    evidence_status = comp.get("evidence_status") or ("UNCERTAIN" if comp.get("is_uncertain") else "DIRECTLY_STATED")
+    filename = comp.get("source_filename") or comp.get("filename") or "Unknown Document"
+    revision = comp.get("revision") or ("Rev 2.0" if is_v2_component(comp) else "Rev 1.0")
+    section = comp.get("section_reference") or "General Directives"
+    page_number = comp.get("page_number") or 1
+
+    supporting_passage = comp.get("supporting_source_passage") or comp.get("raw_context") or ""
+
+    return {
+        "component_id": comp.get("component_id", "CMP"),
+        "component_name": name,
+        "entity_type": entity_type,
+        "simple_description": simple_desc,
+        "has_simple_description": has_simple_desc,
+        "primary_function": primary_func,
+        "has_primary_function": has_primary_func,
+        "associated_subsystem": assoc_subsystem,
+        "has_associated_subsystem": has_assoc_subsystem,
+        "relationships": validated_rels,
+        "has_relationships": len(validated_rels) > 0,
+        "evidence_status": evidence_status,
+        "filename": filename,
+        "revision": revision,
+        "section": section,
+        "page_number": page_number,
+        "supporting_passage": supporting_passage,
+        "material": comp.get("material_or_construction") or "Not specified in SOP",
+        "location": comp.get("location_or_use") or "Not specified in SOP",
+        "alternative_names": comp.get("alternative_names") or [],
+        "technical_specifications": comp.get("technical_specifications") or "",
+        "tooling_or_metrology": comp.get("tooling_or_metrology") or "",
+        "acceptance_criteria": comp.get("acceptance_criteria") or "",
+        "callout_warning": comp.get("callout_warning") or "",
+        "is_uncertain": comp.get("is_uncertain", False),
+        "uncertainty_reason": comp.get("uncertainty_reason", "")
+    }
+
+
+def compare_component_revisions(
+    components: Optional[List[Dict[str, Any]]] = None,
+    sop_filter: Optional[str] = None,
+    entity_types: Optional[List[str]] = None,
+    index_dir: str = DEFAULT_INDEX_DIR
+) -> Dict[str, Any]:
+    """
+    Compares component records between Baseline (V1) and Revised (V2) SOPs.
+    
+    Categorizes components into:
+      - 'added': Present in V2 but not in V1
+      - 'removed': Present in V1 but not in V2
+      - 'modified': Present in both revisions with documented differences in description,
+                    function, technical specifications, or acceptance criteria
+      - 'unchanged': Present in both revisions with identical specifications
+      
+    Args:
+        components: Optional list of component records; if None, loads from components_metadata.json.
+        sop_filter: Optional filter by logical_sop_id or source_filename.
+        entity_types: Optional list of entity types to restrict comparison to (e.g. PHYSICAL_COMPONENT, ASSEMBLY).
+        index_dir: Path to directory containing components_metadata.json.
+        
+    Returns:
+        Dict containing:
+            - 'summary': Counts for added, removed, modified, unchanged, total_compared
+            - 'added': List of component records added in V2
+            - 'removed': List of component records removed from V1
+            - 'modified': List of dicts with {'component_name', 'v1', 'v2', 'diffs': [(field, val1, val2)]}
+            - 'unchanged': List of dicts with {'component_name', 'v1', 'v2'}
+    """
+    if components is None:
+        components = load_components_metadata(index_dir)
+        
+    filtered = components or []
+    
+    # Optional entity type filter
+    if entity_types:
+        filtered = [c for c in filtered if c.get("entity_type") in entity_types]
+        
+    # Optional SOP filter
+    if sop_filter and sop_filter not in ("All Documents", "All SOP Documents", "All"):
+        sf_clean = sop_filter.strip().lower()
+        filtered = [
+            c for c in filtered
+            if sf_clean in str(c.get("logical_sop_id", "")).lower()
+            or sf_clean in str(c.get("filename", "")).lower()
+            or sf_clean in str(c.get("source_filename", "")).lower()
+            or sf_clean in str(c.get("document_id", "")).lower()
+        ]
+        
+    v1_comps = [c for c in filtered if is_v1_component(c)]
+    v2_comps = [c for c in filtered if is_v2_component(c)]
+    
+    v1_by_name: Dict[str, Dict[str, Any]] = {}
+    for c in v1_comps:
+        name = str(c.get("component_name") or "").strip()
+        if name and name not in v1_by_name:
+            v1_by_name[name] = c
+            
+    v2_by_name: Dict[str, Dict[str, Any]] = {}
+    for c in v2_comps:
+        name = str(c.get("component_name") or "").strip()
+        if name and name not in v2_by_name:
+            v2_by_name[name] = c
+            
+    added: List[Dict[str, Any]] = []
+    removed: List[Dict[str, Any]] = []
+    modified: List[Dict[str, Any]] = []
+    unchanged: List[Dict[str, Any]] = []
+    
+    comparison_fields = [
+        ("simple_description", "Simplified Explanation"),
+        ("primary_function", "Primary Vehicle Function"),
+        ("technical_specifications", "Technical Specifications & Tolerances"),
+        ("acceptance_criteria", "Acceptance Criteria"),
+        ("material_or_construction", "Material / Construction"),
+        ("tooling_or_metrology", "Tooling & Metrology")
+    ]
+    
+    for name, c2 in v2_by_name.items():
+        if name not in v1_by_name:
+            added.append(c2)
+        else:
+            c1 = v1_by_name[name]
+            diffs = []
+            for field_key, field_label in comparison_fields:
+                v1_val = str(c1.get(field_key) or "").strip()
+                v2_val = str(c2.get(field_key) or "").strip()
+                if v1_val != v2_val:
+                    diffs.append({
+                        "field": field_key,
+                        "label": field_label,
+                        "v1_value": v1_val or "(Not specified)",
+                        "v2_value": v2_val or "(Not specified)"
+                    })
+            if diffs:
+                modified.append({
+                    "component_name": name,
+                    "entity_type": c2.get("entity_type", "PHYSICAL_COMPONENT"),
+                    "v1": c1,
+                    "v2": c2,
+                    "diffs": diffs
+                })
+            else:
+                unchanged.append({
+                    "component_name": name,
+                    "entity_type": c2.get("entity_type", "PHYSICAL_COMPONENT"),
+                    "v1": c1,
+                    "v2": c2
+                })
+                
+    for name, c1 in v1_by_name.items():
+        if name not in v2_by_name:
+            removed.append(c1)
+            
+    # Sort results alphabetically by component name
+    added.sort(key=lambda x: str(x.get("component_name", "")).lower())
+    removed.sort(key=lambda x: str(x.get("component_name", "")).lower())
+    modified.sort(key=lambda x: str(x.get("component_name", "")).lower())
+    unchanged.sort(key=lambda x: str(x.get("component_name", "")).lower())
+    
+    total_distinct = len(added) + len(removed) + len(modified) + len(unchanged)
+    
+    return {
+        "summary": {
+            "total_compared": total_distinct,
+            "added_count": len(added),
+            "removed_count": len(removed),
+            "modified_count": len(modified),
+            "unchanged_count": len(unchanged)
+        },
+        "added": added,
+        "removed": removed,
+        "modified": modified,
+        "unchanged": unchanged
+    }
 
 
 def save_document_components(
@@ -1696,11 +2055,34 @@ def retrieve_relevant_chunks(
     q_arr = q_vec.reshape(1, -1).astype(np.float32)
 
     # 2. Search FAISS
-    # When filtering by revision mode or categories, expand candidate pool
-    has_filters = bool(document_id or logical_sop_id or specific_revision_filter or effective_mode in ("v2", "v1"))
-    k_search = min(index.ntotal, max(top_k * 8, 40) if has_filters else top_k)
+    # Search all chunks in index so domain and revision re-ranking evaluates all candidates
+    k_search = index.ntotal
 
     scores, indices = index.search(q_arr, k_search)
+
+    # Detect domain context from query for focused lexical / subsystem alignment
+    ql_raw = query.lower()
+    ql_tokens = set(re.findall(r'\b[a-z0-9_]+\b', ql_raw))
+
+    is_engine_domain = bool(
+        re.search(r'\b(engine\s+alignment|powerpack|v12|engine\s+bay|trunnion|shaft\s+alignment|hydromount)\b', ql_raw)
+        or ('engine' in ql_tokens and any(t in ql_tokens for t in ['alignment', 'align', 'hoisting', 'trunnion', 'mounting', 'bay', 'crankshaft', 'offset', 'steps', 'procedure']))
+    )
+    is_hull_domain = bool(
+        re.search(r'\b(hull\s+welding|armoured\s+hull|hull\s+tub|glacis|sponson|gmaw|welding\s+cell|turnover\s+jig)\b', ql_raw)
+        or ('hull' in ql_tokens and any(t in ql_tokens for t in ['weld', 'welding', 'assemblies', 'assembly', 'plate', 'plates', 'tub', 'sponson', 'glacis']))
+    )
+    is_turret_domain = bool(
+        re.search(r'\b(turret|turret\s+mount|ceramic-hybrid|cross-roller|slip-ring|forj|rotary\s+joint|pinion|traverse)\b', ql_raw)
+    )
+    is_suspension_domain = bool(
+        re.search(r'\b(suspension|torsion\s+bar|road-wheel|rotary\s+damper|track\s+system|magnetorheological|sprocket\s+alignment)\b', ql_raw)
+        or ('suspension' in ql_tokens or 'torsion' in ql_tokens)
+    )
+    is_gun_domain = bool(
+        re.search(r'\b(gun|bore\s+sighting|muzzle|recoil|thermal\s+sleeve|dynamic\s+muzzle|artillery|barrel)\b', ql_raw)
+        or ('gun' in ql_tokens and any(t in ql_tokens for t in ['calibration', 'calibrate', 'bore', 'recoil', 'muzzle']))
+    )
 
     candidates: List[Dict[str, Any]] = []
     for score, idx in zip(scores[0], indices[0]):
@@ -1738,11 +2120,65 @@ def retrieve_relevant_chunks(
         result_item["citation"] = format_citation(raw_chunk)
         result_item["is_v2"] = chunk_is_v2
 
+        # Targeted domain relevance adjustment
+        fn = str(raw_chunk.get("filename", "")).lower()
+        sec_title = str(raw_chunk.get("section_title", "")).lower()
+        log_id = str(raw_chunk.get("logical_sop_id", "")).lower()
+
+        domain_boost = 0.0
+        if is_engine_domain:
+            if "engine_alignment" in fn or "ea_309" in log_id:
+                domain_boost += 0.18
+                if "alignment" in sec_title or "shaft" in sec_title:
+                    domain_boost += 0.06
+                elif "hoisting" in sec_title or "trunnion" in sec_title:
+                    domain_boost += 0.05
+                elif "metrology" in sec_title or "hydromount" in sec_title:
+                    domain_boost += 0.04
+                if re.match(r'^section\s+[1-3]\.0', sec_title):
+                    domain_boost += 0.04
+            else:
+                domain_boost -= 0.10
+
+        elif is_hull_domain:
+            if "hull_welding" in fn or "hw_101" in log_id:
+                domain_boost += 0.18
+                if "assembly" in ql_raw or "assemblies" in ql_raw:
+                    if "assembly" in sec_title or "jig" in sec_title or "plate" in sec_title:
+                        domain_boost += 0.04
+                elif "benchmark" in ql_raw or "weld" in ql_raw or "parameter" in ql_raw:
+                    if "welding" in sec_title or "multi-pass" in sec_title or "gmaw" in sec_title:
+                        domain_boost += 0.06
+                    elif "benchmarks" in sec_title or "metrology" in sec_title:
+                        domain_boost += 0.04
+            else:
+                domain_boost -= 0.10
+
+        elif is_turret_domain:
+            if "turret_integration" in fn or "ti_204" in log_id:
+                domain_boost += 0.18
+            else:
+                domain_boost -= 0.10
+
+        elif is_suspension_domain:
+            if "torsion_suspension" in fn or "ts_412" in log_id:
+                domain_boost += 0.18
+            else:
+                domain_boost -= 0.10
+
+        elif is_gun_domain:
+            if "gun_calibration" in fn or "gc_515" in log_id:
+                domain_boost += 0.18
+            else:
+                domain_boost -= 0.10
+
+        eff_score = raw_score + domain_boost
+
         # Controlled V2 preference in "All revisions" mode among comparably relevant results
         if effective_mode == "all" and chunk_is_v2:
-            result_item["effective_score"] = raw_score + v2_boost
-        else:
-            result_item["effective_score"] = raw_score
+            eff_score += v2_boost
+
+        result_item["effective_score"] = eff_score
 
         candidates.append(result_item)
 
@@ -1820,6 +2256,757 @@ def build_evidence_context(
     return formatted_context, citations
 
 
+# ============================================================================
+# COMPONENT-AWARE RAG RETRIEVAL & CONTEXT SYNTHESIS (MINI PHASE 3)
+# ============================================================================
+
+def is_v2_component(comp: Dict[str, Any]) -> bool:
+    """
+    Deterministically determines whether a component record belongs to a revised (V2) or
+    currently active operational SOP.
+    
+    Any document that is not an archival baseline (V1) document is an active,
+    authoritative technical specification and is eligible for latest (V2) retrieval.
+    """
+    if comp.get("is_v2") is True:
+        return True
+    if comp.get("is_v1") is True:
+        return False
+
+    fname = str(comp.get("source_filename") or comp.get("filename", "")).lower().strip()
+    rev = str(comp.get("revision", "")).lower().strip()
+
+    if "uploaded" in rev or "uploaded" in fname:
+        return True
+    if fname.endswith("_v2.pdf") or fname.endswith("-v2.pdf") or "v2" in rev or "[version 2.0]" in rev:
+        return True
+    if fname in BASELINE_V1_FILENAMES or fname.endswith("_v1.pdf") or fname.endswith("-v1.pdf"):
+        return False
+    if "baseline" in rev or "archival" in rev:
+        return False
+    return True
+
+
+def is_v1_component(comp: Dict[str, Any]) -> bool:
+    """
+    Deterministically determines whether a component record belongs to an archival baseline (V1) SOP.
+    """
+    if comp.get("is_v1") is True:
+        return True
+    if comp.get("is_v2") is True:
+        return False
+
+    fname = str(comp.get("source_filename") or comp.get("filename", "")).lower().strip()
+    rev = str(comp.get("revision", "")).lower().strip()
+
+    if "uploaded" in rev or "uploaded" in fname:
+        return False
+    if fname.endswith("_v2.pdf") or fname.endswith("-v2.pdf") or "v2" in rev or "[version 2.0]" in rev:
+        return False
+    if fname in BASELINE_V1_FILENAMES or fname.endswith("_v1.pdf") or fname.endswith("-v1.pdf"):
+        return True
+    if "baseline" in rev or "archival" in rev:
+        return True
+    clean_rev = rev.split("|")[0].strip()
+    if clean_rev in ("v1.0", "v1", "rev 1", "rev 1.0", "version 1", "version 1.0"):
+        return True
+    return False
+
+
+def format_component_citation(comp: Dict[str, Any]) -> str:
+    """
+    Constructs a uniform, traceable source citation string for a component record.
+    Format: [Filename, Revision, Section, Page X]
+    """
+    fname = comp.get("source_filename") or comp.get("filename", "SOP.pdf")
+    rev = comp.get("revision", "").split("|")[0].strip()
+    sec = comp.get("section_reference", "General")
+    sec_clean = re.sub(r'[\r\n]+', ' ', sec).split(' - ')[0].split(' : ')[0].strip()
+    if len(sec_clean) > 40:
+        sec_clean = sec_clean[:37] + "..."
+    page = comp.get("page_number", 1)
+    return f"[{fname}, {rev}, {sec_clean}, Page {page}]"
+
+
+def detect_component_intent(
+    query: str,
+    index_dir: str = DEFAULT_INDEX_DIR
+) -> Dict[str, Any]:
+    """
+    Detects whether a user query is asking about equipment components, assemblies,
+    subsystems, functions, relationships, revision changes, or general procedures.
+    
+    Categories:
+    - A: COMPONENT_OVERVIEW (Component overview / list / parts breakdown)
+    - B: COMPONENT_FUNCTION (Individual component explanation / function)
+    - C: ASSEMBLY_SUBSYSTEM (Assembly or subsystem explanation)
+    - D: COMPONENT_RELATIONSHIPS (Component relationships / connections / interfaces)
+    - E: REVISION_CHANGES (V1 versus V2 component changes)
+    - F: GENERAL_PROCEDURAL (General SOP procedural questions, standard RAG)
+    """
+    if not query or not query.strip():
+        return {
+            "is_component_intent": False,
+            "category": "GENERAL_PROCEDURAL",
+            "category_code": "F",
+            "matched_entities": [],
+            "confidence": 0.0,
+            "reason": "Empty query"
+        }
+
+    ql = query.lower().strip()
+
+    # Extract matched component entities from metadata if available
+    matched_entities: List[str] = []
+    try:
+        all_comps = load_components_metadata(index_dir)
+        q_norm = re.sub(r'[^a-z0-9\s]', ' ', ql)
+        seen = set()
+        for c in all_comps:
+            name = c.get("component_name", "")
+            if not name or len(name) < 3:
+                continue
+            name_norm = re.sub(r'[^a-z0-9\s]', ' ', name.lower()).strip()
+            if not name_norm:
+                continue
+            if f" {name_norm} " in f" {q_norm} " or q_norm.startswith(name_norm + " ") or q_norm.endswith(" " + name_norm):
+                if name_norm not in seen:
+                    seen.add(name_norm)
+                    matched_entities.append(name)
+    except Exception:
+        pass
+
+    # Category E: V1 vs V2 Component Changes
+    rev_change_pattern = (
+        re.search(r'\b(what\s+changed|changes?|differences?|compare)\b.*\b(v1|v2|baseline|revised|revision)\b', ql)
+        or 'v1 and v2' in ql or 'between v1 and v2' in ql or 'v1 versus v2' in ql
+    )
+    comp_indicator_pattern = re.search(r'\b(components?|parts?|assembl(?:y|ies)|subsystems?|materials?|hardware)\b', ql)
+    if rev_change_pattern and comp_indicator_pattern:
+        return {
+            "is_component_intent": True,
+            "category": "REVISION_CHANGES",
+            "category_code": "E",
+            "matched_entities": matched_entities,
+            "confidence": 0.95,
+            "reason": "Query asks about differences/changes in components between revisions."
+        }
+
+    # Category D: Component Relationships
+    rel_pattern = re.search(
+        r'\b(how\s+are\s+(?:these\s+|the\s+)?components\s+related|relationship\s+between|relationships?\s+of|'
+        r'connect(?:ed|s)?\s+(?:to|with)|interface(?:s)?\s+with|interact(?:s)?\s+with|'
+        r'mounted?\s+(?:to|on)|how\s+do\s+.*\s+(?:connect|interface|relate))\b',
+        ql
+    )
+    if rel_pattern and (len(matched_entities) >= 1 or any(w in ql for w in ['component', 'components', 'part', 'parts', 'assembly', 'related', 'connection'])):
+        return {
+            "is_component_intent": True,
+            "category": "COMPONENT_RELATIONSHIPS",
+            "category_code": "D",
+            "matched_entities": matched_entities,
+            "confidence": 0.92,
+            "reason": "Query asks about relationships, mechanical connections, or interfaces between components."
+        }
+
+    # Category A: Component Overview / List / Assemblies Breakdown
+    overview_pattern = re.search(
+        r'\b(what\s+are\s+the\s+(?:main\s+|basic\s+)?(?:components|parts|assemblies|subsystems)|'
+        r'what\s+does\s+.*\s+say\s+about\s+(?:its\s+|the\s+)?(?:main\s+|basic\s+)?(?:components|parts|assemblies|subsystems)|'
+        r'main\s+assemblies\s+of|basic\s+assemblies\s+of|'
+        r'basic\s+parts\s+of|list\s+(?:all\s+|the\s+)?(?:components|assemblies|subsystems)|list\s+of\s+(?:components|assemblies|subsystems)|'
+        r'(?:components|assemblies|subsystems)\s+of\s+the|parts\s+of\s+the|breakdown\s+of\s+(?:the\s+)?(?:components|assemblies)|'
+        r'all\s+(?:components|assemblies)\s+of|what\s+(?:components|assemblies)\s+(?:make\s+up|belong))\b',
+        ql
+    )
+    if overview_pattern and not any(w in ql for w in ['powerpack', 'v12 powerpack']):
+        if any(w in ql for w in ['assemblies', 'assembly', 'subsystem', 'subsystems']):
+            return {
+                "is_component_intent": True,
+                "category": "ASSEMBLY_SUBSYSTEM",
+                "category_code": "C",
+                "matched_entities": matched_entities,
+                "confidence": 0.92,
+                "reason": "Query asks for an overview or breakdown of assemblies or subsystems."
+            }
+        return {
+            "is_component_intent": True,
+            "category": "COMPONENT_OVERVIEW",
+            "category_code": "A",
+            "matched_entities": matched_entities,
+            "confidence": 0.90,
+            "reason": "Query asks for an overview, list, or breakdown of equipment components."
+        }
+
+    # Category C: Assembly or Subsystem Explanation
+    assembly_pattern = re.search(
+        r'\b(explain|describe|detail|overview\s+of|main\s+(?:components|assemblies)\s+of\s+(?:the\s+)?|what\s+(?:does\s+.*\s+say\s+about|are)\s+(?:the\s+)?main\s+assemblies)\b.*\b(assembly|assemblies|subsystem|subsystems|powerpack|mount\s+system|suspension\s+system|turret\s+basket|hull\s+tub|hull\s+welding|hull)\b',
+        ql
+    ) or any(w in ql for w in ['v12 powerpack', 'turret basket assembly', 'needle-bearing housing assembly'])
+    if assembly_pattern:
+        return {
+            "is_component_intent": True,
+            "category": "ASSEMBLY_SUBSYSTEM",
+            "category_code": "C",
+            "matched_entities": matched_entities,
+            "confidence": 0.90,
+            "reason": "Query asks to explain or detail a complex assembly or subsystem."
+        }
+
+    # Category B: Individual Component Explanation / Function
+    func_pattern = re.search(
+        r'\b(function\s+of|purpose\s+of|role\s+of|what\s+does\s+(?:the\s+|a\s+)?.*do|what\s+is\s+(?:the\s+|a\s+)?(?:function|purpose)|'
+        r'what\s+is\s+(?:the\s+|a\s+)?(?:\w+\s+)?(?:bearing|bar|damper|plate|evacuator|pinion|valve|coupling|sensor|isolator|flange)|'
+        r'explain\s+the\s+(?:\w+\s+)?(?:bearing|bar|damper|plate|evacuator|pinion|valve|coupling|sensor|isolator|flange))\b',
+        ql
+    )
+    if func_pattern or (len(matched_entities) >= 1 and any(w in ql for w in ['function', 'purpose', 'role', 'what is', 'explain', 'what does', 'used for', 'how does'])):
+        return {
+            "is_component_intent": True,
+            "category": "COMPONENT_FUNCTION",
+            "category_code": "B",
+            "matched_entities": matched_entities,
+            "confidence": 0.88,
+            "reason": "Query asks about the specific operational function or role of an individual component."
+        }
+
+    # Category F: General SOP Procedural Questions (Default)
+    return {
+        "is_component_intent": False,
+        "category": "GENERAL_PROCEDURAL",
+        "category_code": "F",
+        "matched_entities": matched_entities,
+        "confidence": 0.85,
+        "reason": "Query concerns procedures, technical tolerances, parameters, or general SOP execution."
+    }
+
+
+def resolve_conversational_query(
+    question: str,
+    conversation_history: Optional[List[Dict[str, str]]] = None,
+    components: Optional[List[Dict[str, Any]]] = None,
+    index_dir: str = DEFAULT_INDEX_DIR
+) -> Tuple[str, Optional[str]]:
+    """
+    Resolves pronoun and generic follow-up references ('this component', 'it', 'this assembly',
+    'which assembly does it belong to', etc.) by identifying the antecedent component from
+    recent conversation turns.
+    
+    Returns:
+        Tuple[str, Optional[str]]: (effective_query, antecedent_component_name)
+    """
+    if not conversation_history:
+        return question, None
+
+    ql = question.lower().strip()
+    follow_up_cues = [
+        "this component", "the component", "this part", "this assembly", "the assembly",
+        "which assembly does it belong to", "belong to", "connect to it",
+        "what other components connect", "what happens if this component",
+        "what changed in this component", "which sop section describes its",
+        "what does it do", "what does this do", "does it do", "how is it",
+        "describe its", "explain it", "how does it", "what is it"
+    ]
+
+    words = ql.split()
+    needs_antecedent = any(cue in ql for cue in follow_up_cues) or (
+        len(words) <= 10 and any(p in words for p in ["it", "its", "this", "these", "that"])
+    )
+
+    if not needs_antecedent:
+        return question, None
+
+    found_comp = None
+
+    # 1. Pattern extraction from conversation turns (e.g. "Explain the <Component> (<ENTITY_TYPE>)")
+    for turn in reversed(conversation_history):
+        content = str(turn.get("content", ""))
+        m = re.search(r'(?:Explain the|Component:|about the)\s+([A-Za-z0-9\s\-]+?)(?:\s+\([A-Z_]+\)|$|\s+based)', content, re.IGNORECASE)
+        if m:
+            cand = m.group(1).strip()
+            if len(cand) >= 3 and cand.lower() not in ("it", "this", "these", "the component"):
+                found_comp = cand
+                break
+
+    # 2. Metadata matching against known component records if not resolved by pattern
+    if not found_comp:
+        comps = components if components is not None else load_components_metadata(index_dir)
+        if comps:
+            comp_names = sorted(list({str(c.get("component_name", "")).strip() for c in comps if c.get("component_name")}), key=len, reverse=True)
+            for turn in reversed(conversation_history):
+                content = str(turn.get("content", ""))
+                for name in comp_names:
+                    if len(name) >= 3 and name.lower() in content.lower():
+                        found_comp = name
+                        break
+                if found_comp:
+                    break
+
+    if found_comp and found_comp.lower() not in ql:
+        effective_query = f"{question} (regarding component: {found_comp})"
+        return effective_query, found_comp
+
+    return question, found_comp
+
+
+def retrieve_component_aware_evidence(
+    query: str,
+    top_k_chunks: int = 5,
+    top_k_components: int = 8,
+    document_id: Optional[str] = None,
+    logical_sop_id: Optional[str] = None,
+    revision: Optional[str] = None,
+    revision_mode: Optional[str] = None,
+    score_threshold: Optional[float] = None,
+    index_dir: str = DEFAULT_INDEX_DIR,
+    endpoint: str = DEFAULT_OLLAMA_ENDPOINT,
+    embed_model: str = DEFAULT_EMBED_MODEL,
+    v2_boost: float = 0.03
+) -> Dict[str, Any]:
+    """
+    Hybrid component-aware retrieval engine:
+    1. Detects query intent across Categories A-F.
+    2. Performs FAISS vector similarity search over chunk passages.
+    3. For component queries (Categories A-E), retrieves, filters, and ranks structured
+       component metadata records and explicitly validated relationships.
+    4. Applies strict revision policy (V2-first, V1-only, or All) across both vector
+       chunks and structured component metadata.
+    5. Excludes OTHER_REFERENCE, TOOL_OR_INSTRUMENT, and DOCUMENT_OR_CERTIFICATE from physical components.
+    """
+    intent = detect_component_intent(query, index_dir=index_dir)
+
+    # Normalize effective revision mode (V2-first default)
+    effective_mode: str = "v2"
+    if revision_mode:
+        rm = revision_mode.strip().lower()
+        if "v2" in rm and "all" not in rm and "prioritize" not in rm:
+            effective_mode = "v2"
+        elif "v1" in rm or "baseline" in rm:
+            effective_mode = "v1"
+        elif "all" in rm or "cross" in rm or "prioritize" in rm:
+            effective_mode = "all"
+        else:
+            effective_mode = rm
+    elif revision:
+        r_str = revision.strip().lower()
+        if r_str in ["v2", "v2_only", "revision_v2", "latest"] or r_str.startswith("v2 —") or r_str.startswith("v2 -"):
+            effective_mode = "v2"
+        elif r_str in ["v1", "v1_only", "baseline_v1", "baseline"] or r_str.startswith("v1 —") or r_str.startswith("v1 -"):
+            effective_mode = "v1"
+        elif r_str in ["all", "all_revisions", "all revisions"] or r_str.startswith("all revisions"):
+            effective_mode = "all"
+
+    # Retrieve semantic chunks from FAISS with consistent revision mode
+    chunks = retrieve_relevant_chunks(
+        query=query,
+        top_k=top_k_chunks,
+        document_id=document_id,
+        logical_sop_id=logical_sop_id,
+        revision=revision,
+        revision_mode=effective_mode,
+        score_threshold=score_threshold,
+        index_dir=index_dir,
+        endpoint=endpoint,
+        embed_model=embed_model,
+        v2_boost=v2_boost
+    )
+
+    if not intent["is_component_intent"]:
+        return {
+            "intent": intent,
+            "is_component_query": False,
+            "chunks": chunks,
+            "components": [],
+            "supporting_entities": [],
+            "relationships": [],
+            "revision_mode": effective_mode,
+            "citations": [c.get("citation") for c in chunks if c.get("citation")]
+        }
+
+    all_comps = load_components_metadata(index_dir)
+    if not all_comps:
+        return {
+            "intent": intent,
+            "is_component_query": True,
+            "chunks": chunks,
+            "components": [],
+            "supporting_entities": [],
+            "relationships": [],
+            "revision_mode": effective_mode,
+            "citations": [c.get("citation") for c in chunks if c.get("citation")]
+        }
+
+    # Filter components
+    physical_candidates = []
+    supporting_candidates = []
+
+    STOP_WORDS = {
+        'what', 'are', 'the', 'is', 'a', 'an', 'of', 'in', 'and', 'for', 'to', 'how',
+        'do', 'does', 'did', 'these', 'this', 'that', 'with', 'between', 'explain',
+        'describe', 'function', 'purpose', 'role', 'components', 'parts', 'main',
+        'basic', 'tell', 'me', 'about', 'list', 'show', 'all'
+    }
+
+    ql = query.lower().strip()
+    clean_q = re.sub(r'[^a-zA-Z0-9\s-]', ' ', ql)
+    q_tokens = [t for t in re.split(r'[\s-]+', clean_q) if len(t) >= 3 and t not in STOP_WORDS]
+    matched_names_lower = [m.lower() for m in intent.get("matched_entities", [])]
+
+    for c in all_comps:
+        # Revision filter
+        c_is_v2 = is_v2_component(c)
+        c_is_v1 = is_v1_component(c)
+        if effective_mode == "v2" and not c_is_v2:
+            continue
+        elif effective_mode == "v1" and c_is_v2:
+            continue
+
+        # Document ID filter
+        if document_id and c.get("document_id") != document_id:
+            continue
+
+        # Logical SOP ID filter
+        if logical_sop_id and c.get("logical_sop_id") != logical_sop_id:
+            continue
+
+        # Specific Revision String filter
+        if revision and revision.lower() not in ("v1", "v2", "all"):
+            if revision.lower() not in str(c.get("revision", "")).lower():
+                continue
+
+        etype = c.get("entity_type", "")
+        # NEVER treat OTHER_REFERENCE as physical component or supporting entity
+        if etype == "OTHER_REFERENCE":
+            continue
+
+        # Score matching
+        name = str(c.get("component_name", "")).lower()
+        desc = str(c.get("simple_description", "")).lower()
+        func = str(c.get("primary_function", "")).lower()
+        sub = str(c.get("parent_subsystem") or c.get("subsystem") or "").lower()
+        mat = str(c.get("material_or_construction", "")).lower()
+        spec = str(c.get("technical_specifications", "")).lower()
+        search_blob = f"{name} {desc} {func} {sub} {mat} {spec}"
+
+        score = 0.0
+        # For revision comparison queries, establish baseline relevance so both revisions are retrieved
+        if intent.get("category") == "REVISION_CHANGES":
+            score += 1.0
+
+        # Check matched entity from query
+        for m_name in matched_names_lower:
+            if m_name in name:
+                score += 25.0
+            elif m_name in search_blob:
+                score += 8.0
+
+        # Exact component name & subsystem tokens in query
+        for tok in q_tokens:
+            if tok in sub:
+                score += 15.0
+            if tok in name:
+                score += 10.0
+            elif tok in search_blob:
+                score += 2.0
+
+        # Domain alignment boost for components
+        c_fn = str(c.get("source_filename") or c.get("filename", "")).lower()
+        if "hull" in q_tokens or "welding" in q_tokens:
+            if "hull_welding" in c_fn or "armoured hull" in sub:
+                score += 12.0
+            else:
+                score -= 10.0
+        elif "engine" in q_tokens or "powerpack" in q_tokens:
+            if "engine_alignment" in c_fn or "powerpack" in sub:
+                score += 12.0
+            else:
+                score -= 10.0
+        elif "turret" in q_tokens:
+            if "turret_integration" in c_fn or "turret" in sub:
+                score += 12.0
+            else:
+                score -= 10.0
+        elif "suspension" in q_tokens or "torsion" in q_tokens:
+            if "torsion_suspension" in c_fn or "suspension" in sub:
+                score += 12.0
+            else:
+                score -= 10.0
+        elif "gun" in q_tokens or "muzzle" in q_tokens:
+            if "gun_calibration" in c_fn or "gun" in sub:
+                score += 12.0
+            else:
+                score -= 10.0
+
+        # Entity type boost when assemblies or structural components are queried
+        if "assemblies" in ql or "assembly" in ql:
+            if etype == "ASSEMBLY":
+                score += 15.0
+            elif etype == "PHYSICAL_COMPONENT":
+                score += 8.0
+
+        # V2 boost in "all" mode
+        if effective_mode == "all" and c_is_v2:
+            score += 0.05
+
+        if score <= 0.0:
+            continue
+
+        item = dict(c)
+        item["retrieval_score"] = score
+        item["is_v2"] = c_is_v2
+        item["citation"] = format_component_citation(c)
+
+        if etype in ("PHYSICAL_COMPONENT", "ASSEMBLY", "SUBSYSTEM"):
+            physical_candidates.append(item)
+        elif etype in ("MATERIAL", "TECHNICAL_PARAMETER", "PROCESS_OR_OPERATION"):
+            supporting_candidates.append(item)
+
+    # Sort candidates
+    physical_candidates.sort(key=lambda x: x["retrieval_score"], reverse=True)
+    supporting_candidates.sort(key=lambda x: x["retrieval_score"], reverse=True)
+
+    # In All revisions mode (especially for revision comparison), ensure both V1 and V2 are represented
+    if effective_mode == "all" and len(physical_candidates) > 1:
+        v2_candidates = [c for c in physical_candidates if c["is_v2"]]
+        v1_candidates = [c for c in physical_candidates if not c["is_v2"]]
+        if v2_candidates and v1_candidates:
+            half_k = max(1, top_k_components // 2)
+            v2_selected = v2_candidates[:half_k + (top_k_components % 2)]
+            v1_selected = v1_candidates[:half_k]
+            combined = []
+            for v2_c, v1_c in zip(v2_selected, v1_selected):
+                combined.append(v2_c)
+                combined.append(v1_c)
+            if len(v2_selected) > len(v1_selected):
+                combined.extend(v2_selected[len(v1_selected):])
+            elif len(v1_selected) > len(v2_selected):
+                combined.extend(v1_selected[len(v2_selected):])
+            selected_physical = combined[:top_k_components]
+        else:
+            selected_physical = physical_candidates[:top_k_components]
+    else:
+        selected_physical = physical_candidates[:top_k_components]
+
+    selected_supporting = supporting_candidates[:4]
+
+    # Collect validated relationships
+    validated_relationships: List[Dict[str, Any]] = []
+    seen_rel = set()
+    for comp in selected_physical:
+        src_name = comp.get("component_name", "")
+        for rel in comp.get("relationships", []):
+            pred = rel.get("relationship_type", "")
+            tgt = rel.get("target_component", "")
+            src_ref = rel.get("source_reference", "")
+            if pred in ALLOWED_RELATIONSHIP_PREDICATES and tgt and src_ref:
+                rel_key = (src_name, pred, tgt)
+                if rel_key not in seen_rel:
+                    seen_rel.add(rel_key)
+                    validated_relationships.append({
+                        "source_component": src_name,
+                        "relationship_type": pred,
+                        "target_component": tgt,
+                        "source_reference": src_ref,
+                        "source_filename": comp.get("source_filename") or comp.get("filename"),
+                        "revision": comp.get("revision")
+                    })
+
+    # Merged citations
+    merged_citations: List[Dict[str, Any]] = []
+    seen_citations = set()
+
+    for comp in selected_physical:
+        c_dict = {
+            "filename": comp.get("source_filename") or comp.get("filename"),
+            "document_id": comp.get("document_id"),
+            "revision": comp.get("revision"),
+            "section_title": comp.get("section_reference", "General"),
+            "page_number": comp.get("page_number", 1),
+            "component_name": comp.get("component_name"),
+            "entity_type": comp.get("entity_type"),
+            "evidence_status": comp.get("evidence_status", "DIRECTLY_STATED"),
+            "citation": comp["citation"]
+        }
+        key = (c_dict["filename"], c_dict["revision"], c_dict["page_number"])
+        if key not in seen_citations:
+            seen_citations.add(key)
+            merged_citations.append(c_dict)
+
+    for ch in chunks:
+        ch_dict = {
+            "filename": ch.get("filename"),
+            "document_id": ch.get("document_id"),
+            "revision": ch.get("revision"),
+            "section_title": ch.get("section_title"),
+            "page_number": ch.get("page_number"),
+            "page_numbers": ch.get("page_numbers"),
+            "citation": ch.get("citation"),
+            "score": ch.get("score")
+        }
+        key = (ch_dict["filename"], ch_dict["revision"], ch_dict["page_number"])
+        if key not in seen_citations:
+            seen_citations.add(key)
+            merged_citations.append(ch_dict)
+
+    return {
+        "intent": intent,
+        "is_component_query": bool(selected_physical or selected_supporting or chunks),
+        "chunks": chunks,
+        "components": selected_physical,
+        "supporting_entities": selected_supporting,
+        "relationships": validated_relationships,
+        "revision_mode": effective_mode,
+        "citations": merged_citations
+    }
+
+
+def build_component_evidence_context(
+    retrieved_components: List[Dict[str, Any]],
+    retrieved_chunks: List[Dict[str, Any]],
+    validated_relationships: Optional[List[Dict[str, Any]]] = None,
+    supporting_entities: Optional[List[Dict[str, Any]]] = None,
+    max_context_chars: int = 16000
+) -> Tuple[str, List[Dict[str, Any]]]:
+    """
+    Constructs a structured component knowledge block and merges it with semantic
+    SOP chunk passages for injection into LLM prompts.
+    """
+    blocks = []
+    citations = []
+
+    # 1. Authoritative Structured Components
+    if retrieved_components:
+        blocks.append("### AUTHORITATIVE STRUCTURED COMPONENT KNOWLEDGE:")
+        for i, c in enumerate(retrieved_components):
+            c_num = i + 1
+            citation_str = c.get("citation", format_component_citation(c))
+            name = c.get("component_name", "Unknown Component")
+            etype = c.get("entity_type", "PHYSICAL_COMPONENT")
+            fname = c.get("source_filename") or c.get("filename", "SOP.pdf")
+            rev = c.get("revision", "N/A")
+            sec = c.get("section_reference", "General")
+            page = c.get("page_number", 1)
+            ev_status = c.get("evidence_status", "DIRECTLY_STATED")
+            desc = c.get("simple_description") or "Not explicitly described in SOP."
+            func = c.get("primary_function") or "Not specified in SOP — do NOT invent a function."
+            mat = c.get("material_or_construction") or "Not specified in SOP."
+            sub = c.get("parent_subsystem") or c.get("subsystem") or "Not specified in SOP."
+            loc = c.get("location_or_use") or "Not specified in SOP."
+            specs = c.get("technical_specifications") or "None listed."
+
+            comp_lines = [
+                f"--- COMPONENT [{c_num}]: {name} ---",
+                f"ENTITY TYPE: {etype}",
+                f"DOCUMENT: {fname} | REVISION: {rev} | SECTION: {sec} | PAGE: {page}",
+                f"CITATION: {citation_str}",
+                f"EVIDENCE STATUS: {ev_status} (Strict: Assert as facts only if DIRECTLY_STATED; note GENERAL_CONTEXT/INFERRED accordingly)",
+                f"DESCRIPTION: {desc}",
+                f"PRIMARY FUNCTION: {func}",
+                f"MATERIAL / CONSTRUCTION: {mat}",
+                f"SUBSYSTEM / LOCATION: {sub} ({loc})",
+                f"TECHNICAL SPECIFICATIONS: {specs}"
+            ]
+
+            # Relationships for this component
+            rels = c.get("relationships", [])
+            if rels:
+                comp_lines.append("VALIDATED RELATIONSHIPS:")
+                for r in rels:
+                    comp_lines.append(
+                        f"  * {r.get('relationship_type')} -> {r.get('target_component')} "
+                        f"[Citation: {r.get('source_reference')}]"
+                    )
+            else:
+                comp_lines.append("VALIDATED RELATIONSHIPS: None documented in SOP.")
+
+            blocks.append("\n".join(comp_lines))
+            blocks.append("")
+
+            citations.append({
+                "passage_number": c_num,
+                "component_name": name,
+                "entity_type": etype,
+                "filename": fname,
+                "document_id": c.get("document_id"),
+                "revision": rev,
+                "section_title": sec,
+                "page_number": page,
+                "evidence_status": ev_status,
+                "citation": citation_str
+            })
+
+    # 2. Supporting Technical Parameters / Materials
+    if supporting_entities:
+        blocks.append("### SUPPORTING TECHNICAL PARAMETERS & MATERIALS:")
+        for se in supporting_entities:
+            blocks.append(
+                f"- [{se.get('entity_type')}]: {se.get('component_name')} | "
+                f"Details: {se.get('technical_specifications') or se.get('material_or_construction')} | "
+                f"Citation: {se.get('citation')}"
+            )
+        blocks.append("")
+
+    # 3. Validated Relationships Cross-Reference
+    if validated_relationships:
+        blocks.append("### ALL VALIDATED MECHANICAL & OPERATIONAL RELATIONSHIPS:")
+        for vr in validated_relationships:
+            blocks.append(
+                f"- {vr['source_component']} --[{vr['relationship_type']}]--> {vr['target_component']} "
+                f"(Source: {vr['source_reference']})"
+            )
+        blocks.append("")
+
+    # 4. Semantic FAISS chunk evidence
+    if retrieved_chunks:
+        chunk_context, chunk_citations = build_evidence_context(retrieved_chunks, max_context_chars=max_context_chars)
+        blocks.append("### AUTHORITATIVE SOP EVIDENCE TEXT:")
+        blocks.append(chunk_context)
+        citations.extend(chunk_citations)
+
+    return "\n".join(blocks), citations
+
+
+# ============================================================================
+# COMPONENT-AWARE RAG PROMPTS
+# ============================================================================
+
+COMPONENT_RAG_SYSTEM_PROMPT = """You are the official SOP Document Intelligence Assistant for Heavy Vehicles Factory (HVF), Armoured Vehicles Nigam Limited (AVNL), Ministry of Defence.
+
+Your objective is to provide beginner-friendly, rigorous, and completely grounded technical explanations of armoured vehicle components, assemblies, subsystems, functions, and relationships using ONLY the authoritative SOP evidence provided below.
+
+Strict Grounding and Integrity Guidelines:
+1. Strict Grounding: Rely EXCLUSIVELY on the factual statements in the provided EVIDENCE PASSAGES and STRUCTURED COMPONENT RECORDS. Never invent, extrapolate, or hallucinate component functions, materials, mechanical relationships, measurements, or locations.
+2. Component Name Alone Does NOT Prove Function: If a component is named in the SOP but its operational function is not explicitly described, state clearly: "The SOP does not specify the operational function of [Component Name]." Do not speculate or invent a purpose.
+3. Validated Relationships Only: Only describe connections, interfaces, or relationships that are explicitly documented in the VALIDATED RELATIONSHIPS section of the evidence. Co-occurrence of two parts in the same section or paragraph does NOT constitute a relationship. If no relationship is documented between components, explicitly state that the SOP does not specify how they connect.
+4. Preserve Evidence Status:
+   - For DIRECTLY_STATED items, present details as verified facts from the SOP body text.
+   - For GENERAL_CONTEXT or INFERRED items, explicitly note that this information is inferred from section titles or visual diagrams, rather than directly stated text.
+5. In-Text Citations: At the end of every substantive statement, include the exact bracketed citation: [Filename, Revision, Section, Page X].
+6. Revision Distinctions: When evidence contains multiple revisions (e.g. baseline Rev 4.2 vs revised Rev 5.0), clearly distinguish between baseline and revised versions.
+7. Beginner-Friendly Structure: Explain technical concepts simply and clearly for new technicians, while strictly retaining official technical names and codes."""
+
+COMPONENT_RAG_INSTRUCTIONS = """Answer the user's component question using a clear, structured, beginner-friendly explanation strictly grounded in the authoritative component records and SOP passages above.
+
+REQUIRED ANSWER STRUCTURE:
+1. Overview: Provide a short, plain-language summary of the component, assembly, or subsystem.
+2. Main Components / Assemblies: List the main physical components or assemblies documented in the SOP evidence. State their exact technical names and entity types. (Do not confuse tools, inspection procedures, or parameters with physical components).
+   - For structural assemblies and hull questions: Explicitly distinguish between structural assemblies (e.g. Hull Tub Assembly, Sponson Box) and structural plates/components (e.g. Lower Hull Plate, Glacis Plate, Weld Joint Root Backing Strip). If the SOP lists plates without defining them as assemblies, call them structural components or plates, NOT assemblies. Never confuse manufacturing tools, equipment, or inspection stations (e.g., GMAW welding stations, PAUT scanners, induction heaters, turnover jigs) with structural vehicle components or assemblies.
+3. Component Functions: For each component, explain what it does ONLY where the SOP evidence directly describes its function. If the SOP names a component but does not specify its function, explicitly state: "The SOP does not specify the operational function of [Component Name]." Never invent functions.
+4. Validated Relationships: Describe mechanical and operational relationships ONLY when explicitly supported by the validated relationships in the evidence. Quote or cite the relationship. If no relationship between components is documented, state that no relationship is specified in the SOP. Never assume a connection from mere co-occurrence.
+5. Relevant Procedures & Operational Context: Mention any relevant procedures, inspections, or operational handling context documented in the SOP.
+   - For procedural steps (e.g. engine alignment): Present steps in chronological sequence directly supported by the SOP evidence (e.g., Section 1.0 engine bay metrology & hydromount damping, Section 2.0 powerpack hoisting & trunnion seating, Section 3.0 dual-laser shaft alignment & thermal compensation). State exact engineering values and tolerances (e.g. +0.10 mm cold offset vertical rise, running offset <= 0.035 mm, hydromount stiffness within +- 2.0%, DGQA Cpk >= 1.67, 5.5-tonne powerpack) without introducing unrelated procedures (such as sprocket or jig alignment) from other SOPs.
+6. What the SOP Does Not Specify: Explicitly highlight any missing specifications, unstated functions, or undocumented construction details where important.
+
+GROUNDING & CITATION RULES:
+- Use beginner-friendly language while strictly preserving the authentic technical names used in the SOP.
+- Never invent: component functions, materials, mechanical connections, dimensions/tolerances, or locations. A component name alone does NOT prove its function.
+- Strictly preserve evidence status:
+  * DIRECTLY_STATED: Assert as verified facts from the SOP.
+  * GENERAL_CONTEXT or INFERRED: Note that this detail is derived from general context or visual diagrams, not directly stated body text.
+- Include in-text citations: [Filename, Revision, Section, Page X] for every assertion.
+- If asked about V1 vs V2, clearly distinguish between baseline and revised components and specifications."""
+
+
 RAG_SYSTEM_PROMPT = """You are the official SOP Document Intelligence Assistant for Heavy Vehicles Factory (HVF), Armoured Vehicles Nigam Limited (AVNL), Ministry of Defence.
 
 Your objective is to provide complete, precise, and rigorous answers to engineering and manufacturing questions using ONLY the authoritative SOP evidence provided below.
@@ -1846,13 +3033,15 @@ def generate_rag_answer(
     endpoint: str = DEFAULT_OLLAMA_ENDPOINT,
     model: str = DEFAULT_LLM_MODEL,
     temperature: float = 0.1,
-    max_tokens: int = 1536
+    max_tokens: int = 1536,
+    index_dir: str = DEFAULT_INDEX_DIR
 ) -> Dict[str, Any]:
     """
-    Synthesizes an evidence-grounded answer to a user question using retrieved chunks.
+    Synthesizes an evidence-grounded answer to a user question using retrieved chunks
+    and structured component metadata with component-aware intelligence.
     
     Guarantees:
-    - Strictly grounds generation in retrieved evidence.
+    - Strictly grounds generation in retrieved evidence and structured component records.
     - Evaluates and flags insufficient evidence conditions (with revision-aware abstention).
     - Returns structured citation metadata alongside answer text.
     - Separates conversational dialogue context from authoritative document evidence.
@@ -1864,24 +3053,57 @@ def generate_rag_answer(
             - citations (List[Dict[str, Any]])
             - is_insufficient (bool)
             - is_cross_revision (bool)
+            - component_intent (Dict[str, Any])
+            - is_component_query (bool)
             - model (str)
             - tokens_per_second (float)
             - eval_count (int)
             - status (str)
     """
     if retrieved_chunks is None:
-        retrieved_chunks = retrieve_relevant_chunks(
+        evidence_data = retrieve_component_aware_evidence(
             query=question,
-            top_k=top_k,
+            top_k_chunks=top_k,
             document_id=document_id,
             logical_sop_id=logical_sop_id,
             revision=revision,
             revision_mode=revision_mode,
             score_threshold=score_threshold,
+            index_dir=index_dir,
             endpoint=endpoint
         )
+        chunks = evidence_data.get("chunks", [])
+        components = evidence_data.get("components", [])
+        supporting_entities = evidence_data.get("supporting_entities", [])
+        relationships = evidence_data.get("relationships", [])
+        is_comp_query = evidence_data.get("is_component_query", False)
+        intent = evidence_data.get("intent", {})
+    else:
+        chunks = retrieved_chunks
+        intent = detect_component_intent(question, index_dir=index_dir)
+        if intent.get("is_component_intent", False):
+            evidence_data = retrieve_component_aware_evidence(
+                query=question,
+                top_k_chunks=top_k,
+                document_id=document_id,
+                logical_sop_id=logical_sop_id,
+                revision=revision,
+                revision_mode=revision_mode,
+                score_threshold=score_threshold,
+                index_dir=index_dir,
+                endpoint=endpoint
+            )
+            components = evidence_data.get("components", [])
+            supporting_entities = evidence_data.get("supporting_entities", [])
+            relationships = evidence_data.get("relationships", [])
+            is_comp_query = bool(components or relationships)
+        else:
+            components = []
+            supporting_entities = []
+            relationships = []
+            is_comp_query = False
 
-    if not retrieved_chunks:
+    if not chunks and not components:
         mode_val = (revision_mode or (revision if revision and any(k in revision.lower() for k in ["v2", "v1"]) else "")).lower()
         if "v2" in mode_val and "all" not in mode_val:
             insufficient_msg = "The selected revision (V2 — Latest revision) does not provide sufficient evidence to answer this question."
@@ -1895,16 +3117,36 @@ def generate_rag_answer(
             "citations": [],
             "is_insufficient": True,
             "is_cross_revision": False,
+            "component_intent": intent,
+            "is_component_query": is_comp_query,
             "model": model,
             "tokens_per_second": 0.0,
             "eval_count": 0,
             "status": "insufficient_evidence"
         }
 
-    evidence_context, citations = build_evidence_context(retrieved_chunks, max_context_chars=16000)
+    if is_comp_query:
+        evidence_context, citations = build_component_evidence_context(
+            retrieved_components=components,
+            retrieved_chunks=chunks,
+            validated_relationships=relationships,
+            supporting_entities=supporting_entities,
+            max_context_chars=16000
+        )
+        selected_system_prompt = COMPONENT_RAG_SYSTEM_PROMPT
+        selected_instructions = COMPONENT_RAG_INSTRUCTIONS
+    else:
+        evidence_context, citations = build_evidence_context(chunks, max_context_chars=16000)
+        selected_system_prompt = RAG_SYSTEM_PROMPT
+        selected_instructions = (
+            "Answer the user's specific question using relevant evidence from the passages above.\n"
+            "- Focus directly on evidence relevant to the question.\n"
+            "- Present all relevant parameters, tolerances, and acceptance criteria concisely in structured bullet points or a table.\n"
+            "- Avoid redundant or overly repetitive explanations.\n"
+        )
 
-    has_v1 = any(is_v1_chunk(c) for c in retrieved_chunks)
-    has_v2 = any(is_v2_chunk(c) for c in retrieved_chunks)
+    has_v1 = any(is_v1_chunk(c) for c in chunks) or any(is_v1_component(c) for c in components)
+    has_v2 = any(is_v2_chunk(c) for c in chunks) or any(is_v2_component(c) for c in components)
     is_cross_revision = has_v1 and has_v2
 
     # Construct bounded user prompt
@@ -1929,33 +3171,29 @@ def generate_rag_answer(
     prompt_parts.append(question)
     prompt_parts.append("")
     prompt_parts.append("### INSTRUCTIONS:")
-    prompt_parts.append(
-        "Answer the user's specific question using relevant evidence from the passages above.\n"
-        "- Focus directly on evidence relevant to the question.\n"
-        "- Present all relevant parameters, tolerances, and acceptance criteria concisely in structured bullet points or a table.\n"
-        "- Avoid redundant or overly repetitive explanations.\n"
-    )
+    prompt_parts.append(selected_instructions)
+
     if is_cross_revision:
         prompt_parts.append(
-            "- CRITICAL: The retrieved evidence spans multiple revisions (both baseline V1 and revised V2). "
+            "\n- CRITICAL: The retrieved evidence spans multiple revisions (both baseline V1 and revised V2). "
             "Clearly identify the exact revision for each assertion and explicitly distinguish baseline vs revised values.\n"
         )
     else:
-        prompt_parts.append("- Distinguish between baseline (Rev 4.2) and revised (Rev 5.0) requirements if present.\n")
+        prompt_parts.append("\n- Distinguish between baseline (Rev 4.2) and revised (Rev 5.0) requirements if present.\n")
 
     prompt_parts.append(
-        "- Insert the exact bracketed citation for every parameter.\n"
-        "- If certain benchmarks are not covered in the retrieved SOP evidence, explicitly note what is missing.\n"
+        "- Insert the exact bracketed citation for every parameter or assertion.\n"
+        "- If certain benchmarks or component functions are not covered in the retrieved SOP evidence, explicitly note what is missing.\n"
         "- Conclude concisely and end with complete terminal punctuation."
     )
 
     full_prompt = "\n".join(prompt_parts)
 
-    # Generate response via local Gemma
+    # Generate response via local model
     gen_result = generate_response(
         prompt=full_prompt,
         model=model,
-        system_prompt=RAG_SYSTEM_PROMPT,
+        system_prompt=selected_system_prompt,
         temperature=temperature,
         max_tokens=max_tokens,
         endpoint=endpoint
@@ -1977,6 +3215,11 @@ def generate_rag_answer(
         "answer": answer_text,
         "citations": citations,
         "is_insufficient": is_insufficient,
+        "is_cross_revision": is_cross_revision,
+        "component_intent": intent,
+        "is_component_query": is_comp_query,
+        "retrieved_components_count": len(components),
+        "retrieved_chunks_count": len(chunks),
         "model": model,
         "tokens_per_second": gen_result.get("tokens_per_second", 0.0),
         "eval_count": gen_result.get("eval_count", 0),
@@ -1991,6 +3234,7 @@ def answer_question(
     document_id: Optional[str] = None,
     logical_sop_id: Optional[str] = None,
     revision: Optional[str] = None,
+    revision_mode: Optional[str] = None,
     score_threshold: Optional[float] = None,
     conversation_history: Optional[List[Dict[str, str]]] = None,
     index_dir: str = DEFAULT_INDEX_DIR,
@@ -1999,7 +3243,7 @@ def answer_question(
 ) -> Dict[str, Any]:
     """
     End-to-end RAG pipeline wrapper (synchronous):
-    1. Retrieves relevant evidence passages from FAISS.
+    1. Retrieves relevant evidence passages from FAISS and structured component metadata.
     2. Builds structured evidence context.
     3. Synthesizes an evidence-grounded answer with traceable citations.
     
@@ -2020,9 +3264,10 @@ def answer_question(
         Dict[str, Any]: Comprehensive RAG answer object.
     """
     retrieval_t0 = time.time()
-    chunks = retrieve_relevant_chunks(
-        query=question,
-        top_k=top_k,
+    effective_question, antecedent_comp = resolve_conversational_query(question, conversation_history, index_dir=index_dir)
+    evidence_data = retrieve_component_aware_evidence(
+        query=effective_question,
+        top_k_chunks=top_k,
         document_id=document_id,
         logical_sop_id=logical_sop_id,
         revision=revision,
@@ -2035,16 +3280,23 @@ def answer_question(
 
     rag_output = generate_rag_answer(
         question=question,
-        retrieved_chunks=chunks,
+        retrieved_chunks=evidence_data.get("chunks", []),
+        top_k=top_k,
+        document_id=document_id,
+        logical_sop_id=logical_sop_id,
+        revision=revision,
+        revision_mode=revision_mode,
         conversation_history=conversation_history,
         endpoint=endpoint,
         model=model,
-        revision=revision,
-        revision_mode=revision_mode
+        index_dir=index_dir
     )
 
     rag_output["retrieval_duration_ms"] = round(retrieval_duration_ms, 2)
-    rag_output["retrieved_chunks_count"] = len(chunks)
+    rag_output["retrieved_chunks_count"] = len(evidence_data.get("chunks", []))
+    rag_output["retrieved_components_count"] = len(evidence_data.get("components", []))
+    rag_output["component_intent"] = evidence_data.get("intent", {})
+    rag_output["antecedent_component"] = antecedent_comp
     return rag_output
 
 
@@ -2065,20 +3317,21 @@ def stream_rag_answer(
 ) -> Tuple[Generator[str, None, None], List[Dict[str, Any]], Dict[str, Any]]:
     """
     End-to-end progressive RAG streaming pipeline:
-    1. Retrieves relevant evidence passages from FAISS with V2-first intelligence.
+    1. Retrieves relevant evidence passages from FAISS and structured component metadata with V2-first intelligence.
     2. Builds structured evidence context and citations.
-    3. Yields progressive token stream from Gemma while returning citations immediately.
+    3. Yields progressive token stream from LLM while returning citations immediately.
     
     Returns:
         Tuple[Generator[str, None, None], List[Dict[str, Any]], Dict[str, Any]]:
             - token_generator: Yields response text token by token.
             - citations: Structured citations list for UI rendering.
-            - info: Metadata dict (retrieval_duration_ms, retrieved_chunks_count, is_cross_revision).
+            - info: Metadata dict (retrieval_duration_ms, retrieved_chunks_count, retrieved_components_count, component_intent, is_cross_revision).
     """
     retrieval_t0 = time.time()
-    chunks = retrieve_relevant_chunks(
-        query=question,
-        top_k=top_k,
+    effective_question, antecedent_comp = resolve_conversational_query(question, conversation_history, index_dir=index_dir)
+    evidence_data = retrieve_component_aware_evidence(
+        query=effective_question,
+        top_k_chunks=top_k,
         document_id=document_id,
         logical_sop_id=logical_sop_id,
         revision=revision,
@@ -2089,7 +3342,14 @@ def stream_rag_answer(
     )
     retrieval_duration_ms = (time.time() - retrieval_t0) * 1000.0
 
-    if not chunks:
+    chunks = evidence_data.get("chunks", [])
+    components = evidence_data.get("components", [])
+    supporting_entities = evidence_data.get("supporting_entities", [])
+    relationships = evidence_data.get("relationships", [])
+    is_comp_query = evidence_data.get("is_component_query", False)
+    intent = evidence_data.get("intent", {})
+
+    if not chunks and not components:
         def empty_gen():
             mode_val = (revision_mode or (revision if revision and any(k in revision.lower() for k in ["v2", "v1"]) else "")).lower()
             if "v2" in mode_val and "all" not in mode_val:
@@ -2102,15 +3362,36 @@ def stream_rag_answer(
         info = {
             "retrieval_duration_ms": round(retrieval_duration_ms, 2),
             "retrieved_chunks_count": 0,
+            "retrieved_components_count": 0,
+            "component_intent": intent,
+            "is_component_query": is_comp_query,
             "is_insufficient": True,
             "is_cross_revision": False
         }
         return empty_gen(), [], info
 
-    evidence_context, citations = build_evidence_context(chunks, max_context_chars=16000)
+    if is_comp_query:
+        evidence_context, citations = build_component_evidence_context(
+            retrieved_components=components,
+            retrieved_chunks=chunks,
+            validated_relationships=relationships,
+            supporting_entities=supporting_entities,
+            max_context_chars=16000
+        )
+        selected_system_prompt = COMPONENT_RAG_SYSTEM_PROMPT
+        selected_instructions = COMPONENT_RAG_INSTRUCTIONS
+    else:
+        evidence_context, citations = build_evidence_context(chunks, max_context_chars=16000)
+        selected_system_prompt = RAG_SYSTEM_PROMPT
+        selected_instructions = (
+            "Answer the user's specific question using relevant evidence from the passages above.\n"
+            "- Focus directly on evidence relevant to the question.\n"
+            "- Present all relevant parameters, tolerances, and acceptance criteria concisely in structured bullet points or a table.\n"
+            "- Avoid redundant or overly repetitive explanations.\n"
+        )
 
-    has_v1 = any(is_v1_chunk(c) for c in chunks)
-    has_v2 = any(is_v2_chunk(c) for c in chunks)
+    has_v1 = any(is_v1_chunk(c) for c in chunks) or any(is_v1_component(c) for c in components)
+    has_v2 = any(is_v2_chunk(c) for c in chunks) or any(is_v2_component(c) for c in components)
     is_cross_revision = has_v1 and has_v2
 
     # Build prompt
@@ -2130,15 +3411,11 @@ def stream_rag_answer(
     prompt_parts.append(question)
     prompt_parts.append("")
     prompt_parts.append("### INSTRUCTIONS:")
-    prompt_parts.append(
-        "Answer the user's specific question using relevant evidence from the passages above.\n"
-        "- Focus directly on evidence relevant to the question.\n"
-        "- Present all relevant parameters, tolerances, and acceptance criteria concisely in structured bullet points or a table.\n"
-        "- Avoid redundant or overly repetitive explanations.\n"
-    )
+    prompt_parts.append(selected_instructions)
+
     if is_cross_revision:
         prompt_parts.append(
-            "- CRITICAL: The retrieved evidence spans multiple revisions (both baseline V1 and revised V2). "
+            "\n- CRITICAL: The retrieved evidence spans multiple revisions (both baseline V1 and revised V2). "
             "Clearly identify the exact revision for each assertion and explicitly distinguish baseline vs revised values.\n"
         )
     else:
@@ -2146,7 +3423,7 @@ def stream_rag_answer(
 
     prompt_parts.append(
         "- Insert the exact bracketed citation for every parameter.\n"
-        "- If certain benchmarks are not covered in the retrieved SOP evidence, explicitly note what is missing.\n"
+        "- If certain benchmarks or component functions are not covered in the retrieved SOP evidence, explicitly note what is missing.\n"
         "- Conclude concisely and end with complete terminal punctuation."
     )
 
@@ -2155,7 +3432,7 @@ def stream_rag_answer(
     token_gen = stream_response(
         prompt=full_prompt,
         model=model,
-        system_prompt=RAG_SYSTEM_PROMPT,
+        system_prompt=selected_system_prompt,
         temperature=temperature,
         max_tokens=max_tokens,
         endpoint=endpoint
@@ -2164,8 +3441,12 @@ def stream_rag_answer(
     info = {
         "retrieval_duration_ms": round(retrieval_duration_ms, 2),
         "retrieved_chunks_count": len(chunks),
+        "retrieved_components_count": len(components),
+        "component_intent": intent,
+        "is_component_query": is_comp_query,
         "is_insufficient": False,
-        "is_cross_revision": is_cross_revision
+        "is_cross_revision": is_cross_revision,
+        "antecedent_component": antecedent_comp
     }
 
     return token_gen, citations, info
@@ -2238,6 +3519,109 @@ def measure_model_performance(
     results["system_ram_available_gb"] = round(psutil.virtual_memory().available / (1024**3), 2)
 
     return results
+
+
+def get_comprehensive_system_health(index_dir: str = DEFAULT_INDEX_DIR) -> Dict[str, Any]:
+    """
+    Performs an all-in-one system reliability diagnostic audit across all 5 operational tiers:
+    1. Local Ollama AI Daemon Connectivity and Model Readiness
+    2. Dense Vector Embeddings (768-dim) and Generation LLM status
+    3. FAISS Vector Database and chunk synchronization
+    4. Structured Component Metadata records and classifications
+    5. Persistent SQLite database health and table integrity
+    
+    Returns:
+        Dict[str, Any]: Comprehensive telemetry dictionary with overall operational state.
+    """
+    # 1. Ollama & Models Connectivity
+    ollama_online = check_ollama_connection()
+    models_info = verify_required_models() if ollama_online else {
+        "ollama_available": False,
+        "llm_present": False,
+        "embed_present": False,
+        "all_ready": False,
+        "installed_models": []
+    }
+
+    # 2. FAISS Vector Index Health
+    faiss_health = verify_faiss_index_health(index_dir)
+
+    # 3. Component Metadata Health
+    comp_meta_path = os.path.join(index_dir, "components_metadata.json")
+    comp_file_exists = os.path.isfile(comp_meta_path)
+    components = load_components_metadata(index_dir)
+    comp_records_count = len(components)
+    
+    entity_type_counts: Dict[str, int] = {}
+    uncertain_count = 0
+    for c in components:
+        etype = c.get("entity_type", "OTHER_REFERENCE")
+        entity_type_counts[etype] = entity_type_counts.get(etype, 0) + 1
+        if c.get("is_uncertain", False):
+            uncertain_count += 1
+
+    comp_is_healthy = comp_file_exists and (comp_records_count > 0)
+
+    # 4. SQLite Database Health
+    db_health = {"is_healthy": False, "connected": False, "total_conversations": 0, "total_messages": 0, "issues": []}
+    try:
+        import database as db_mod
+        db_health = db_mod.get_database_health()
+    except Exception as e:
+        db_health["issues"] = [f"Database health check error: {e}"]
+
+    # 5. Document breakdown
+    total_docs = faiss_health.get("total_documents", 0)
+    baseline_docs_count = len(faiss_health.get("baseline_documents", []))
+    uploaded_docs_count = len(faiss_health.get("uploaded_documents", []))
+
+    # 6. Overall State Determination
+    if (ollama_online and models_info.get("all_ready", False) and 
+        faiss_health.get("is_healthy", False) and db_health.get("is_healthy", False)):
+        overall_status = "HEALTHY"
+        status_message = "All system services, vector indices, and database stores are fully operational."
+    elif not faiss_health.get("is_healthy", False) or not db_health.get("is_healthy", False):
+        overall_status = "CRITICAL"
+        status_message = "Critical data store failure (FAISS index or SQLite database issue detected)."
+    else:
+        overall_status = "DEGRADED"
+        status_message = "System operational with limited AI inference capabilities (Ollama daemon or model missing)."
+
+    return {
+        "timestamp": time.time(),
+        "overall_status": overall_status,
+        "status_message": status_message,
+        "ollama": {
+            "online": ollama_online,
+            "endpoint": DEFAULT_OLLAMA_ENDPOINT,
+            "llm_model": DEFAULT_LLM_MODEL,
+            "llm_ready": models_info.get("llm_present", False),
+            "embed_model": DEFAULT_EMBED_MODEL,
+            "embed_ready": models_info.get("embed_present", False),
+            "all_models_ready": models_info.get("all_ready", False),
+            "installed_models": models_info.get("installed_models", [])
+        },
+        "faiss": faiss_health,
+        "components": {
+            "is_healthy": comp_is_healthy,
+            "file_exists": comp_file_exists,
+            "file_path": comp_meta_path,
+            "total_records": comp_records_count,
+            "entity_type_counts": entity_type_counts,
+            "physical_components_count": entity_type_counts.get("PHYSICAL_COMPONENT", 0),
+            "assemblies_count": entity_type_counts.get("ASSEMBLY", 0),
+            "subsystems_count": entity_type_counts.get("SUBSYSTEM", 0),
+            "uncertain_records_count": uncertain_count
+        },
+        "database": db_health,
+        "documents": {
+            "total_documents": total_docs,
+            "baseline_documents_count": baseline_docs_count,
+            "uploaded_documents_count": uploaded_docs_count,
+            "baseline_documents": faiss_health.get("baseline_documents", []),
+            "uploaded_documents": faiss_health.get("uploaded_documents", [])
+        }
+    }
 
 
 if __name__ == "__main__":

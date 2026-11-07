@@ -21,8 +21,11 @@ import tempfile
 import sqlite3
 
 # Ensure UTF-8 output on Windows console
-if sys.platform == "win32":
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
 import database as db
 from app import group_citations_by_source

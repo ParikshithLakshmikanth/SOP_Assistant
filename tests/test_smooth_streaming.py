@@ -33,9 +33,11 @@ if "." not in sys.path:
     sys.path.insert(0, ".")
 
 # Ensure UTF-8 output on Windows console
-if sys.platform == "win32":
-    import io
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
 import database as db
 import rag_engine as re

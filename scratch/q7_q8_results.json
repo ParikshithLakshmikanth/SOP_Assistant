@@ -1,0 +1,284 @@
+{
+  "q7": {
+    "question": "What does the hull welding SOP say about its main assemblies?",
+    "time_seconds": 115.62260699272156,
+    "is_component_query": true,
+    "intent_category": "ASSEMBLY_SUBSYSTEM",
+    "status": "success",
+    "answer": "Here is the explanation of the main assemblies and components of the hull welding process, strictly based on the provided SOP evidence:\n\n**1. Overview:**\nThe SOP evidence details the fabrication and welding procedures for the armoured hull structure, focusing on the assembly of the Hull Tub Assembly and its relationship with various structural plates and protective elements.\n\n**2. Main Components / Assemblies:**\nThe main physical components and assemblies documented in the SOP evidence are:\n*   **Hull Tub Assembly** (ENTITY TYPE: ASSEMBLY): The complete welded structural monocoque of the tank, comprising the belly, side, front glacis, and rear bulkhead plates [HVF\\_SOP\\_1\\_Hull\\_Welding\\_v2.pdf, Rev 5.0 [Version 2.0], SECTION 2.0 \u2014 HULL JIG FIXTURE DATUM LOCKING & ROOT GAP DIMENSIONAL, Page 3].\n*   **Sponson Box** (ENTITY TYPE: ASSEMBLY): Box-like welded steel structural compartments overhanging the tracks on both sides of the hull [HVF\\_SOP\\_1\\_Hull\\_Welding\\_v2.pdf, Rev 5.0 [Version 2.0], SECTION 4.0 \u2014 MULTI-PASS PULSE-GMAW & ROBOTIC SUBMERGED ARC WELDING, Page 5].\n*   **Lower Hull Plate** (ENTITY TYPE: PHYSICAL\\_COMPONENT): A heavy armoured base plate forming the structural floor and lower tub of the vehicle hull [HVF\\_SOP\\_1\\_Hull\\_Welding\\_v2.pdf, Rev 5.0 [Version 2.0], SECTION 1.0 \u2014 RHA PLATE RECEIVING, SPECTROGRAPHIC VERIFICATION & EDGE, Page 2].\n*   **Glacis Plate** (ENTITY TYPE: PHYSICAL\\_COMPONENT): A steeply angled front armour plate protecting the driver compartment from incoming frontal projectiles [HVF\\_SOP\\_1\\_Hull\\_Welding\\_v2.pdf, Rev 5.0 [Version 2.0], SECTION 2.0 \u2014 HULL JIG FIXTURE DATUM LOCKING & ROOT GAP DIMENSIONAL, Page 3].\n*   **Weld Joint Root Backing Strip** (ENTITY TYPE: PHYSICAL\\_COMPONENT): A non-metallic ceramic or steel",
+    "citations": [
+      {
+        "passage_number": 1,
+        "component_name": "Hull Tub Assembly",
+        "entity_type": "ASSEMBLY",
+        "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+        "document_id": "HVF/AVNL/SOP-MBT/HW-101-V2",
+        "revision": "Rev 5.0 [Version 2.0]",
+        "section_title": "SECTION 2.0 \u2014 HULL JIG FIXTURE DATUM LOCKING & ROOT GAP DIMENSIONAL",
+        "page_number": 3,
+        "evidence_status": "DIRECTLY_STATED",
+        "citation": "[HVF_SOP_1_Hull_Welding_v2.pdf, Rev 5.0 [Version 2.0], SECTION 2.0 \u2014 HULL JIG FIXTURE DATUM ..., Page 3]"
+      },
+      {
+        "passage_number": 2,
+        "component_name": "Sponson Box",
+        "entity_type": "ASSEMBLY",
+        "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+        "document_id": "HVF/AVNL/SOP-MBT/HW-101-V2",
+        "revision": "Rev 5.0 [Version 2.0]",
+        "section_title": "SECTION 4.0 \u2014 MULTI-PASS PULSE-GMAW & ROBOTIC SUBMERGED ARC WELDING",
+        "page_number": 5,
+        "evidence_status": "DIRECTLY_STATED",
+        "citation": "[HVF_SOP_1_Hull_Welding_v2.pdf, Rev 5.0 [Version 2.0], SECTION 4.0 \u2014 MULTI-PASS PULSE-GMAW &..., Page 5]"
+      },
+      {
+        "passage_number": 3,
+        "component_name": "Lower Hull Plate",
+        "entity_type": "PHYSICAL_COMPONENT",
+        "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+        "document_id": "HVF/AVNL/SOP-MBT/HW-101-V2",
+        "revision": "Rev 5.0 [Version 2.0]",
+        "section_title": "SECTION 1.0 \u2014 RHA PLATE RECEIVING, SPECTROGRAPHIC VERIFICATION & EDGE",
+        "page_number": 2,
+        "evidence_status": "DIRECTLY_STATED",
+        "citation": "[HVF_SOP_1_Hull_Welding_v2.pdf, Rev 5.0 [Version 2.0], SECTION 1.0 \u2014 RHA PLATE RECEIVING, SP..., Page 2]"
+      },
+      {
+        "passage_number": 4,
+        "component_name": "Glacis Plate",
+        "entity_type": "PHYSICAL_COMPONENT",
+        "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+        "document_id": "HVF/AVNL/SOP-MBT/HW-101-V2",
+        "revision": "Rev 5.0 [Version 2.0]",
+        "section_title": "SECTION 2.0 \u2014 HULL JIG FIXTURE DATUM LOCKING & ROOT GAP DIMENSIONAL",
+        "page_number": 3,
+        "evidence_status": "DIRECTLY_STATED",
+        "citation": "[HVF_SOP_1_Hull_Welding_v2.pdf, Rev 5.0 [Version 2.0], SECTION 2.0 \u2014 HULL JIG FIXTURE DATUM ..., Page 3]"
+      },
+      {
+        "passage_number": 5,
+        "component_name": "Weld Joint Root Backing Strip",
+        "entity_type": "PHYSICAL_COMPONENT",
+        "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+        "document_id": "HVF/AVNL/SOP-MBT/HW-101-V2",
+        "revision": "Rev 5.0 [Version 2.0]",
+        "section_title": "SECTION 3.0 \u2014 INDUCTION PRE-HEATING & LOW-HYDROGEN CONSUMABLE",
+        "page_number": 4,
+        "evidence_status": "DIRECTLY_STATED",
+        "citation": "[HVF_SOP_1_Hull_Welding_v2.pdf, Rev 5.0 [Version 2.0], SECTION 3.0 \u2014 INDUCTION PRE-HEATING &..., Page 4]"
+      },
+      {
+        "passage_number": 6,
+        "component_name": "ArmourMetallurgySpec",
+        "entity_type": "PHYSICAL_COMPONENT",
+        "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+        "document_id": "HVF/AVNL/SOP-MBT/HW-101-V2",
+        "revision": "Rev 5.0 [Version 2.0]",
+        "section_title": "SECTION 1.0 GENERAL DIRECTIVES",
+        "page_number": 1,
+        "evidence_status": "DIRECTLY_STATED",
+        "citation": "[HVF_SOP_1_Hull_Welding_v2.pdf, Rev 5.0 [Version 2.0], SECTION 1.0 GENERAL DIRECTIVES, Page 1]"
+      },
+      {
+        "passage_number": 7,
+        "component_name": "Transverse Bulkhead Pitch",
+        "entity_type": "PHYSICAL_COMPONENT",
+        "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+        "document_id": "HVF/AVNL/SOP-MBT/HW-101-V2",
+        "revision": "Rev 5.0 [Version 2.0]",
+        "section_title": "SECTION 2.0 \u2014 ROBOTIC TURNOVER JIG LOCKING & DUAL-TRACKER 6-DOF",
+        "page_number": 3,
+        "evidence_status": "DIRECTLY_STATED",
+        "citation": "[HVF_SOP_1_Hull_Welding_v2.pdf, Rev 5.0 [Version 2.0], SECTION 2.0 \u2014 ROBOTIC TURNOVER JIG LO..., Page 3]"
+      },
+      {
+        "passage_number": 8,
+        "component_name": "Hydraulic Clamping Servo Force",
+        "entity_type": "PHYSICAL_COMPONENT",
+        "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+        "document_id": "HVF/AVNL/SOP-MBT/HW-101-V2",
+        "revision": "Rev 5.0 [Version 2.0]",
+        "section_title": "SECTION 2.0 \u2014 ROBOTIC TURNOVER JIG LOCKING & DUAL-TRACKER 6-DOF",
+        "page_number": 3,
+        "evidence_status": "DIRECTLY_STATED",
+        "citation": "[HVF_SOP_1_Hull_Welding_v2.pdf, Rev 5.0 [Version 2.0], SECTION 2.0 \u2014 ROBOTIC TURNOVER JIG LO..., Page 3]"
+      },
+      {
+        "passage_number": 1,
+        "chunk_id": "HVF_AVNL_SOP_MBT_HW_101_V2_C0003",
+        "document_id": "HVF/AVNL/SOP-MBT/HW-101-V2",
+        "logical_sop_id": "HVF_SOP_1_Hull_Welding",
+        "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+        "revision": "Rev 5.0 [Version 2.0] | 30-Oct-2026",
+        "section_title": "SECTION 2.0 \u2014 ROBOTIC TURNOVER JIG LOCKING & DUAL-TRACKER 6-DOF",
+        "page_number": "2-3",
+        "page_numbers": [
+          2,
+          3
+        ],
+        "score": 0.6459751725196838,
+        "citation": "[HVF_SOP_1_Hull_Welding_v2.pdf, Rev 5.0 [Version 2.0], SECTION 2.0 \u2014 ROBOTIC TURNOVER JIG LO..., Page 2-3]",
+        "chunk_text": "Page 2 of 8\n\nSECTION 2.0 \u2014 ROBOTIC TURNOVER JIG LOCKING & DUAL-TRACKER 6-DOF\nGEOMETRIC ALIGNMENT\n\nOperational Execution Protocol (Ver 2.0): Armour assemblies are locked inside the servo-controlled 65-tonne\nturnover positioner. Dual Leica AT960 laser trackers establish active real-time coordinate links to verify hull\nsymmetry, glacis angle, and belly plate flatness before robotic tacking. In accordance with Engineering Directive\nECO-HVF-2026-V2-861, the bay technician shall confirm that digital calibration transponder IOT-HVF-1864 is\nsynchronized with the HVF Cloud Manufacturing Execution System. Additionally, consequuntur repellendus\nenim cupiditate hic esse ducimus similique deserunt harum placeat reprehenderit deserunt aut, verifying that all\nsensor telemetry complies with Class-1 Defence Quality Assurance (DGQA) statistical process capability\nindices (Cpk \u2265 1.67).\n\nQuality Assurance & Non-Conformance Gate: Any reading exceeding the tight Version 2 tolerance envelope\nin Table Robotic triggers an automated SCADA safety trip and digital quarantine hold. Specifically, sequi fugit\nsint praesentium delectus nemo ut magnam dicta quisquam atque, while encrypted data streams from IoT node\nIOT-HVF-1531 are compiled into hull dossier ECO-HVF-2026-V2-733 prior to advancing the assembly to the\nsubsequent bay."
+      },
+      {
+        "passage_number": 2,
+        "chunk_id": "HVF_AVNL_SOP_MBT_HW_101_V2_C0009",
+        "document_id": "HVF/AVNL/SOP-MBT/HW-101-V2",
+        "logical_sop_id": "HVF_SOP_1_Hull_Welding",
+        "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+        "revision": "Rev 5.0 [Version 2.0] | 30-Oct-2026",
+        "section_title": "SECTION 5.0 \u2014 CONTROLLED CRYOGENIC/INDUCTION STRESS NEUTRALIZATION &",
+        "page_number": "5-6",
+        "page_numbers": [
+          5,
+          6
+        ],
+        "score": 0.6684852838516235,
+        "citation": "[HVF_SOP_1_Hull_Welding_v2.pdf, Rev 5.0 [Version 2.0], SECTION 5.0 \u2014 CONTROLLED CRYOGENIC/IN..., Page 5-6]",
+        "chunk_text": "Page 5 of 8\n\nSECTION 5.0 \u2014 CONTROLLED CRYOGENIC/INDUCTION STRESS NEUTRALIZATION &\nANNEALING\n\nOperational Execution Protocol (Ver 2.0): Immediately post-welding, microprocessor-controlled ceramic\nheating blankets enforce isothermal hydrogen bakeout followed by high-energy sub-resonant vibratory stress\nrelief (VSR) to eliminate micro-strains without compromising plate hardness. In accordance with Engineering\nDirective ECO-HVF-2026-V2-423, the bay technician shall confirm that digital calibration transponder\nIOT-HVF-7481 is synchronized with the HVF Cloud Manufacturing Execution System. Additionally, amet id optio\nnihil laborum laudantium autem porro neque rerum repellendus nisi molestias maiores totam sit, verifying that\nall sensor telemetry complies with Class-1 Defence Quality Assurance (DGQA) statistical process capability\nindices (Cpk \u2265 1.67).\n\nQuality Assurance & Non-Conformance Gate: Any reading exceeding the tight Version 2 tolerance envelope\nin Table Controlled triggers an automated SCADA safety trip and digital quarantine hold. Specifically, culpa quia\nincidunt placeat excepturi fugit error laudantium voluptatum velit ipsum hic debitis eligendi, while encrypted data\nstreams from IoT node IOT-HVF-5304 are compiled into hull dossier ECO-HVF-2026-V2-229 prior to advancing\nthe assembly to the subsequent bay."
+      },
+      {
+        "passage_number": 3,
+        "chunk_id": "HVF_AVNL_SOP_MBT_HW_101_V2_C0000",
+        "document_id": "HVF/AVNL/SOP-MBT/HW-101-V2",
+        "logical_sop_id": "HVF_SOP_1_Hull_Welding",
+        "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+        "revision": "Rev 5.0 [Version 2.0] | 30-Oct-2026",
+        "section_title": "0.2 EXECUTIVE SUMMARY & VERSION 2 OPERATIONAL MANDATE",
+        "page_number": 1,
+        "page_numbers": [
+          1
+        ],
+        "score": 0.6587415933609009,
+        "citation": "[HVF_SOP_1_Hull_Welding_v2.pdf, Rev 5.0 [Version 2.0], 0.2 EXECUTIVE SUMMARY & VERSION 2 OPE..., Page 1]",
+        "chunk_text": "MINISTRY OF DEFENCE (DEPT. OF DEFENCE PRODUCTION) \u2022 RESTRICTED \u2014 DEFENCE PRODUCTION \u2022 VERSION 2.0\nRELEASE\nSTANDARD OPERATING PROCEDURE: ARMOURED\nHULL FABRICATIONS & HIGH-TENSILE STEEL\nWELDS (VERSION 2)\n\n0.1 DOCUMENT CONTROL & METADATA MATRIX (VERSION 2.0)\n\nDOCUMENT ID\nHVF/AVNL/SOP-MBT/HW-101-V2\nREVISION & DATE\nRev 5.0 [Version 2.0] | 30-Oct-2026\n\nECO / ECN NUMBER\nECO-HVF-2026-WLD-881\nCORPORATE\nENTITY\nArmoured Vehicles Nigam Ltd (AVNL)\n\nTARGET\nPLATFORM\n\nMBT T-90S Bhishma / Arjun Mk-1A\n(Batch-II Series)\n\nPRODUCTION\nSHOP\n\nAdvanced Robotic Hull Fabrication &\nLaser Cell (Shop-04A)\n\nQA SURVEILLANCE\nDGQA (Armoured Vehicle Electronics &\nHull)\nPAGE BUDGET\n8 Pages (Version 2 Controlled)\n\nSUPERSEDES\nVersion 1.0 (All Previous Issues)\nSECURITY CLASS\nRESTRICTED \u2014 DEFENCE\nPRODUCTION\n\n0.2 EXECUTIVE SUMMARY & VERSION 2 OPERATIONAL MANDATE\n\nVersion\n2.0\nof\nthis\nStandard\nOperating\nProcedure\nincorporates\nEngineering\nChange\nOrder\nECO-HVF-2026-WLD-881,\nintegrating\nautomated\ntwin-wire\npulse-GMAW\nrobotics,\nreal-time\noptical\nseam-tracking pyrometry, and AI-assisted volumetric Phased-Array Ultrasonic Testing (PAUT) for ultra-heavy\nRHA and composite glacis armour welds at Heavy Vehicles Factory (HVF), Avadi. All operations mandate strict\nclosed-loop induction thermal envelopes to prevent micro-segregation and hydrogen embrittlement under\ncombat shock loads.\n\nThis Version 2.0 release supersedes all prior production instructions for Advanced Robotic Hull Fabrication &\nLaser Cell (Shop-04A) at HVF Avadi. Key enhancements under ECO-HVF-2026-WLD-881 mandate\nautomated IoT process telemetry, multi-sensor laser tracking, and automated digital passport archival. Unde\naspernatur omnis recusandae numquam rem id expedita debitis. All operators, supervisors, and DGQA\ninspectors must enforce the updated tolerances herein. Placeat asperiores optio error ducimus quibusdam vel\nsimilique incidunt dolorem quasi."
+      },
+      {
+        "passage_number": 4,
+        "chunk_id": "HVF_AVNL_SOP_MBT_HW_101_V2_C0001",
+        "document_id": "HVF/AVNL/SOP-MBT/HW-101-V2",
+        "logical_sop_id": "HVF_SOP_1_Hull_Welding",
+        "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+        "revision": "Rev 5.0 [Version 2.0] | 30-Oct-2026",
+        "section_title": "SECTION 1.0 \u2014 RHA PLATE RECEIVING, AI ULTRASONIC INGOT MAPPING & CNC",
+        "page_number": "1-2",
+        "page_numbers": [
+          1,
+          2
+        ],
+        "score": 0.6075769066810608,
+        "citation": "[HVF_SOP_1_Hull_Welding_v2.pdf, Rev 5.0 [Version 2.0], SECTION 1.0 \u2014 RHA PLATE RECEIVING, AI..., Page 1-2]",
+        "chunk_text": "0.3 VERSION 2 CRITICAL ENGINEERING ACCEPTANCE BENCHMARKS\n\nCRITICAL PARAMETER\nMANDATORY VERSION 2 ACCEPTANCE CRITERION\n\nArmour Metallurgy Spec\nMIL-DTL-12560K / DMR-1700B Ultra-Tough RHA (420\u2013460 BHN)\n\nAdaptive Heat Control\n160\u00b0C min preheat; 210\u00b0C max interpass with closed-loop IR tracking\n\nAutomated NDT Scan\nFull-volume 128-element PAUT + TOFD with automated defect classification\n\nHull Datum Envelope\n6-DoF Laser Tracker Volumetric Envelope Tolerance \u2264 \u00b10.50 mm (6.8 m span)\n\nVERSION 2 COMPLIANCE HOLD POINT: Under DGQA circular AVNL/2026/V2, failure to capture automated IoT\nsensor logs constitutes an immediate Stop-Line condition. The physical and digital twin records must be\nreconciled and counter-signed by the Resident DGQA Officer.\n\nRESTRICTED \u2014 FOR OFFICIAL USE ONLY (DEFENCE PRODUCTION)\nHEAVY VEHICLES FACTORY (HVF) | AVNL AVADI [VER 2.0]\n\nPROPRIETARY DPSU TECHNICAL DOCUMENT (VER 2.0) \u2014 ARMOURED VEHICLES NIGAM LIMITED (MOD, GOVT. OF INDIA)\nUnauthorized reproduction, transmission, or disclosure is punishable under the Official Secrets Act, 1923.\n\nPage 1 of 8\n\nSECTION 1.0 \u2014 RHA PLATE RECEIVING, AI ULTRASONIC INGOT MAPPING & CNC\nLASER BEVELING\n\nOperational Execution Protocol (Ver 2.0): Incoming high-hardness RHA armour plates undergo automated\nmulti-channel ultrasonic delamination scans, portable spark OES metallurgical confirmation, and multi-axis\nfibre-laser weld bevel contouring to achieve exact double-V profiles. In accordance with Engineering Directive\nECO-HVF-2026-V2-249, the bay technician shall confirm that digital calibration transponder IOT-HVF-1198 is\nsynchronized with the HVF Cloud Manufacturing Execution System. Additionally, sapiente velit id fugit sint iusto\ntotam ratione nostrum commodi sequi deleniti, verifying that all sensor telemetry complies with Class-1 Defence\nQuality Assurance (DGQA) statistical process capability indices (Cpk \u2265 1.67).\n\nQuality Assurance & Non-Conformance Gate: Any reading exceeding the tight Version 2 tolerance envelope\nin Table RHA triggers an automated SCADA safety trip and digital quarantine hold. Specifically, odio maiores\nmagnam reprehenderit iure reprehenderit fugit delectus labore dolores ad, while encrypted data streams from\nIoT node IOT-HVF-2353 are compiled into hull dossier ECO-HVF-2026-V2-498 prior to advancing the assembly\nto the subsequent bay."
+      },
+      {
+        "passage_number": 5,
+        "chunk_id": "HVF_AVNL_SOP_MBT_HW_101_V2_C0010",
+        "document_id": "HVF/AVNL/SOP-MBT/HW-101-V2",
+        "logical_sop_id": "HVF_SOP_1_Hull_Welding",
+        "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+        "revision": "Rev 5.0 [Version 2.0] | 30-Oct-2026",
+        "section_title": "5.0.A SHOP-FLOOR EXECUTION & IOT METROLOGY DIRECTIVES (VER 2.0)",
+        "page_number": 6,
+        "page_numbers": [
+          6
+        ],
+        "score": 0.6365587115287781,
+        "citation": "[HVF_SOP_1_Hull_Welding_v2.pdf, Rev 5.0 [Version 2.0], 5.0.A SHOP-FLOOR EXECUTION & IOT METR..., Page 6]",
+        "chunk_text": "5.0.A SHOP-FLOOR EXECUTION & IOT METROLOGY DIRECTIVES (VER 2.0)\n\nPrior to initiating operation 5.0 on MBT T-90S Bhishma / Arjun Mk-1A (Batch-II Series), the bay controller shall\nverify that the IoT telemetry gateway is connected and active. Dignissimos aliquam provident nisi doloribus\nquaerat adipisci asperiores veniam repellendus consequuntur incidunt esse eum magni numquam saepe. All\nsensor readings recorded during the cycle must be verified against the tightened Version 2 tolerance bands\nspecified in Table 5.0 below.\n\nTABLE 5.0 \u2014 VERSION 2 TECHNICAL TRACKING & IOT VERIFICATION MATRIX\n\nSTEP\nV2 TECHNICAL PARAMETER /\nCHECKPOINT\n\nV2 ACCEPTANCE\nTOLERANCE\n\nIOT METROLOGY /\nGAUGE\nSAMPLING / HOLD\n\n5.1\nHydrogen Effusion Bakeout\n220\u00b0C soak for 240 min\ncontinuous\n\n16-Channel SCADA Data\nRecorder\n100% Critical Joints\n\n5.2\nRamped Thermal Cooling Rate\n\u2264 25\u00b0C / hour down to 50\u00b0C\nAutomated Blanket Ramp\nController\nFull Post-Weld Cycle\n\n5.3\nVSR Stress Peak Neutralization\n\u2265 45% reduction in residual\nstress\n\nHigh-Speed Dynamic Strain\nGauging\n\n6 Hull Reference\nNodes\n\n5.4\nTorsion Housing Alignment Shift\n\u2264 0.25 mm total post-weld\ndrift\n\nLaser Bore Inspection\nSystem\nCold Hull Sign-Off\n\n5.5\nTurret Base Mounting Plane Flat\n\u2264 0.35 mm across 2.2 m\ncircle\n\nPrecision Electronic\nInclinometer\n36-Point Radial Scan\n\nV2 ASSET SERIAL\nNUMBER\n\nMES TELEMETRY\nGATEWAY\nIOT OPERATOR ID\nDGQA VERIFICATION\nV2 DISPOSITION\n\nHVF-V2-2026-604\nIOT-GW-04 / 101-V2\nOP-157 (Biometric)\nDGQA-73 (Crypto-Seal)\nACCEPTED \u2014 PASS\nV2\n\nVERSION 2 HOLD POINT (SECTION 5.0): Ensure all 5 parameters in Table 5.0 are verified via digital telemetry and\nrecorded in the permanent AVNL manufacturing dossier.\n\nRESTRICTED \u2014 FOR OFFICIAL USE ONLY (DEFENCE PRODUCTION)\nHEAVY VEHICLES FACTORY (HVF) | AVNL AVADI [VER 2.0]\n\nPROPRIETARY DPSU TECHNICAL DOCUMENT (VER 2.0) \u2014 ARMOURED VEHICLES NIGAM LIMITED (MOD, GOVT. OF INDIA)\nUnauthorized reproduction, transmission, or disclosure is punishable under the Official Secrets Act, 1923.\n\nPage 6 of 8"
+      }
+    ]
+  },
+  "q8": {
+    "question": "What are the engine alignment procedure steps?",
+    "time_seconds": 130.45224118232727,
+    "is_component_query": false,
+    "intent_category": "GENERAL_PROCEDURAL",
+    "status": "success",
+    "answer": "The engine alignment procedure steps involve wireless multi-sensor dual-laser alignment, thermal compensation, and verification of sensor telemetry, as detailed in Section 3.0 of the SOP [HVF_SOP_3_Engine_Alignment_v2.pdf, Rev 6.0 [Version 2.0], SECTION 3.0 \u2014 WIRELESS MULTI-SENSOR DUAL-LASER SHAFT ALIGNMENT & PAGE 3-4].\n\n**Operational Execution Protocol (Ver 2.0) for Wireless Multi-Sensor Dual-Laser Shaft Alignment & Thermal Compensation:**\n*   Continuous wireless dual-laser sensors measure the radial and angular offset between the engine flywheel output and the transmission input torque converter [HVF_SOP_3_Engine_Alignment_v2.pdf, Rev 6.0 [Version 2.0], SECTION 3.0 \u2014 WIRELESS MULTI-SENSOR DUAL-LASER SHAFT ALIGNMENT & PAGE 3-4].\n*   The system compensates for thermal chassis expansion, specifically a vertical rise of +0.10 mm at full operating temperature [HVF_SOP_3_Engine_Alignment_v2.pdf, Rev 6.0 [Version 2.0], SECTION 3.0 \u2014 WIRELESS MULTI-SENSOR DUAL-LASER SHAFT ALIGNMENT & PAGE 3-4].\n*   The bay technician must confirm that the digital calibration transponder IOT-HVF-9269 is synchronized with the HVF Cloud Manufacturing Execution System [HVF_SOP_3_Engine_Alignment_v2.pdf, Rev 6.0 [Version 2.0], SECTION 3.0 \u2014 WIRELESS MULTI-SENSOR DUAL-LASER SHAFT ALIGNMENT & PAGE 3-4].\n*   All sensor telemetry must comply with Class-1 Defence Quality Assurance (DGQA) statistical process capability indices (Cpk \u2265 1.67) [HVF_SOP_3_Engine_Alignment_v2.pdf, Rev 6.0 [Version 2.0], SECTION 3.0 \u2014 WIRELESS MULTI-SENSOR DUAL-LASER SHAFT ALIGNMENT & PAGE 3-4].\n\n**Quality Assurance and Non-Conformance Gate:**\n*   Any reading exceeding the tight Version 2 tolerance envelope in Table Wireless triggers an automated SCADA safety trip and digital quarantine hold [HVF_SOP_3_Engine_Alignment_v2.pdf, Rev 6.0 [Version 2.0], SECTION 3.0 \u2014 WIRELESS MULTI-SENSOR DUAL-LASER SHAFT ALIGNMENT & PAGE 3-4].\n*   Encrypted data streams from IoT node IOT-HVF-3199 are compiled into hull dossier ECO-HVF-2026-V2-388 prior to advancing the assembly to the subsequent bay [HVF_SOP_3_Engine_Alignment_v2.pdf, Rev 6.0 [Version 2.0], SECTION 3.0 \u2014 WIRELESS MULTI-SENSOR DUAL-LASER SHAFT ALIGNMENT & PAGE 3-4].\n\n**Critical Acceptance Benchmarks (from Section 1.0):**\n*   **Thermal Shaft Offset:** Cold offset targeting +0.10 mm vertical rise; running offset $\\le 0.035$ mm [HVF_SOP_3_Engine_Alignment_v2.pdf, Rev 6.0 [Version 2.0], SECTION 1.0 \u2014 REAR ENGINE BAY METROLO..., Page 1-2].\n*   **Hydraulic Mount Damping:** Hydromount stiffness must be tuned within $\\pm 2.0\\%$ of the dynamic load curve [HVF_SOP_3_Engine_Alignment_v2.pdf, Rev 6.0 [Version 2.0], SECTION 1.0 \u2014 REAR ENGINE BAY METROLO..., Page 1-2].\n*   **Automated Fluid Purge:** Helium leak detection must be $\\le 1.0 \\times 10^{-5}$ mbar.L/s across high-pressure fuel lines [HVF_SOP_3_Engine_Alignment_v2.pdf, Rev 6.0 [Version 2.0], SECTION 1.0 \u2014 REAR ENGINE BAY METROLO..., Page 1-2].\n*   **Full Dyno Hot-Fire:** Required parameters are $1,103$ kW ($1500$ HP) @ $2,200$ RPM, with continuous telemetry data logging [HVF_SOP_3_Engine_Alignment_v2.pdf, Rev 6.0 [Version 2.0], SECTION 1.0 \u2014 REAR ENGINE BAY METROLO..., Page 1-2].\n\n**IOT Verification Matrix (Table 3.0 for Step Verification):**\nThe verification of sensor readings against tolerance bands is performed using the following parameters and associated IOT/Gauge information [HVF_SOP_3_Engine_Alignment_v2.pdf, Rev 6.0 [Version 2.0], 3.0.A SHOP-FLOOR EXECUTION & IOT METR..., Page 4]:\n\n| STEP | V2 TECHNICAL PARAMETER / CHECKPOINT | V2 ACCEPTANCE TOLERANCE | IOT METROLOGY / GAUGE | SAMPLING / HOLD |\n| :--- | :--- | :--- | :--- | :--- |\n| 3.1 | Parallel Radial Offset (Cold) | $\\le 0.035$ mm TIR (target -0.10 mm V) | Continuous Dual-Laser Aligner | Full 360\u00b0 Rotation |\n| 3.2 | Angular Face Misalignment | $\\le 0.025$ mm per 100 mm diameter | Multi-Sensor Wireless Aligner | Clockwise Sweep |\n| 3.3 | Flexible Coupling Axial Gap | $2.00$ mm $\\pm 0.15$ mm axial float | Digital Depth Micrometer | Post-Coupling Gate |\n| 3.4 | Intermediate Cardan Spline Play | $\\le 0.04$ mm radial spline backlash | Dial Test Indicator Setup | Port & Starboard |\n| 3.5 | Coupling Stud Torque Retention | $210$ Nm $\\pm 5$ Nm (Loctite 270) | Calibrated DC Electronic Tool | All 16 Drive Studs |\n\n**Other Specific Checks (Table 5.0 for Powerpack System):**\nFor the MBT T-90S / Arjun Mk-1A (1500 HP Powerpack System), the following parameters must be verified against tolerance bands [HVF_SOP_3_Engine_Alignment_v2.pdf, Rev 6.0 [Version 2.0], 5.0.A SHOP-FLOOR EXECUTION & IOT METR..., Page 6]:\n\n| STEP | V2 TECHNICAL PARAMETER / CHECKPOINT | V2 ACCEPTANCE TOLERANCE | IOT METROLOG",
+    "citations": [
+      {
+        "passage_number": 1,
+        "chunk_id": "HVF_AVNL_SOP_MBT_EA_309_V2_C0005",
+        "document_id": "HVF/AVNL/SOP-MBT/EA-309-V2",
+        "logical_sop_id": "HVF_SOP_3_Engine_Alignment",
+        "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+        "revision": "Rev 6.0 [Version 2.0] | 30-Oct-2026",
+        "section_title": "SECTION 3.0 \u2014 WIRELESS MULTI-SENSOR DUAL-LASER SHAFT ALIGNMENT &",
+        "page_number": "3-4",
+        "page_numbers": [
+          3,
+          4
+        ],
+        "score": 0.5928769111633301,
+        "citation": "[HVF_SOP_3_Engine_Alignment_v2.pdf, Rev 6.0 [Version 2.0], SECTION 3.0 \u2014 WIRELESS MULTI-SENSOR D..., Page 3-4]",
+        "chunk_text": "RESTRICTED \u2014 FOR OFFICIAL USE ONLY (DEFENCE PRODUCTION)\nHEAVY VEHICLES FACTORY (HVF) | AVNL AVADI [VER 2.0]\n\nPROPRIETARY DPSU TECHNICAL DOCUMENT (VER 2.0) \u2014 ARMOURED VEHICLES NIGAM LIMITED (MOD, GOVT. OF INDIA)\nUnauthorized reproduction, transmission, or disclosure is punishable under the Official Secrets Act, 1923.\n\nPage 3 of 8\n\nSECTION 3.0 \u2014 WIRELESS MULTI-SENSOR DUAL-LASER SHAFT ALIGNMENT &\nTHERMAL COMPENSATION\n\nOperational Execution Protocol (Ver 2.0): Continuous wireless dual-laser sensors measure radial and\nangular offset between the engine flywheel output and transmission input torque converter, compensating for\nthermal chassis expansion (+0.10 mm vertical rise at full operating temp). In accordance with Engineering\nDirective ECO-HVF-2026-V2-088, the bay technician shall confirm that digital calibration transponder\nIOT-HVF-9269 is synchronized with the HVF Cloud Manufacturing Execution System. Additionally, harum\nearum rerum tempore dolor eum nesciunt praesentium voluptas voluptatem aut perspiciatis repellendus velit,\nverifying that all sensor telemetry complies with Class-1 Defence Quality Assurance (DGQA) statistical process\ncapability indices (Cpk \u2265 1.67).\n\nQuality Assurance & Non-Conformance Gate: Any reading exceeding the tight Version 2 tolerance envelope\nin Table Wireless triggers an automated SCADA safety trip and digital quarantine hold. Specifically,\nconsequuntur error pariatur placeat dolor quia neque soluta fugiat animi quod iure hic recusandae, while\nencrypted data streams from IoT node IOT-HVF-3199 are compiled into hull dossier ECO-HVF-2026-V2-388\nprior to advancing the assembly to the subsequent bay."
+      },
+      {
+        "passage_number": 2,
+        "chunk_id": "HVF_AVNL_SOP_MBT_EA_309_V2_C0001",
+        "document_id": "HVF/AVNL/SOP-MBT/EA-309-V2",
+        "logical_sop_id": "HVF_SOP_3_Engine_Alignment",
+        "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+        "revision": "Rev 6.0 [Version 2.0] | 30-Oct-2026",
+        "section_title": "SECTION 1.0 \u2014 REAR ENGINE BAY METROLOGY, HYDROMOUNT DAMPING &",
+        "page_number": "1-2",
+        "page_numbers": [
+          1,
+          2
+        ],
+        "score": 0.6103142499923706,
+        "citation": "[HVF_SOP_3_Engine_Alignment_v2.pdf, Rev 6.0 [Version 2.0], SECTION 1.0 \u2014 REAR ENGINE BAY METROLO..., Page 1-2]",
+        "chunk_text": "0.3 VERSION 2 CRITICAL ENGINEERING ACCEPTANCE BENCHMARKS\n\nCRITICAL PARAMETER\nMANDATORY VERSION 2 ACCEPTANCE CRITERION\n\nThermal Shaft Offset\nCold offset targeting +0.10 mm vertical rise; running offset \u2264 0.035 mm\n\nHydraulic Mount Damping\nHydromount stiffness tuned within \u00b1 2.0% dynamic load curve\n\nAutomated Fluid Purge\nHelium leak detection \u2264 1.0 x 10^-5 mbar.L/s across high-pressure fuel lines\n\nFull Dyno Hot-Fire\n1,103 kW (1500 HP) @ 2,200 RPM; continuous telemetry data logging\n\nVERSION 2 COMPLIANCE HOLD POINT: Under DGQA circular AVNL/2026/V2, failure to capture automated IoT\nsensor logs constitutes an immediate Stop-Line condition. The physical and digital twin records must be\nreconciled and counter-signed by the Resident DGQA Officer.\n\nRESTRICTED \u2014 FOR OFFICIAL USE ONLY (DEFENCE PRODUCTION)\nHEAVY VEHICLES FACTORY (HVF) | AVNL AVADI [VER 2.0]\n\nPROPRIETARY DPSU TECHNICAL DOCUMENT (VER 2.0) \u2014 ARMOURED VEHICLES NIGAM LIMITED (MOD, GOVT. OF INDIA)\nUnauthorized reproduction, transmission, or disclosure is punishable under the Official Secrets Act, 1923.\n\nPage 1 of 8\n\nSECTION 1.0 \u2014 REAR ENGINE BAY METROLOGY, HYDROMOUNT DAMPING &\nFIRE-WIRE SENSOR CHECKS\n\nOperational Execution Protocol (Ver 2.0): The rear hull engine compartment undergoes 3D coordinate\nscanning. Active hydromount damping units are matched and calibrated, while optical fire-wire detection and\nautomatic fire extinguishing system (AFES) sensor loops are verified. In accordance with Engineering Directive\nECO-HVF-2026-V2-811, the bay technician shall confirm that digital calibration transponder IOT-HVF-6891 is\nsynchronized with the HVF Cloud Manufacturing Execution System. Additionally, in magnam asperiores\nrepudiandae sit cupiditate quisquam excepturi ratione aliquam, verifying that all sensor telemetry complies with\nClass-1 Defence Quality Assurance (DGQA) statistical process capability indices (Cpk \u2265 1.67).\n\nQuality Assurance & Non-Conformance Gate: Any reading exceeding the tight Version 2 tolerance envelope\nin Table Rear triggers an automated SCADA safety trip and digital quarantine hold. Specifically, praesentium\neveniet commodi cumque magni praesentium cupiditate eius laboriosam molestiae, while encrypted data\nstreams from IoT node IOT-HVF-6119 are compiled into hull dossier ECO-HVF-2026-V2-831 prior to advancing\nthe assembly to the subsequent bay."
+      },
+      {
+        "passage_number": 3,
+        "chunk_id": "HVF_AVNL_SOP_MBT_EA_309_V2_C0003",
+        "document_id": "HVF/AVNL/SOP-MBT/EA-309-V2",
+        "logical_sop_id": "HVF_SOP_3_Engine_Alignment",
+        "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+        "revision": "Rev 6.0 [Version 2.0] | 30-Oct-2026",
+        "section_title": "SECTION 2.0 \u2014 POWERPACK HOISTING, 3D GUIDED LOWERING & HYDRAULIC",
+        "page_number": "2-3",
+        "page_numbers": [
+          2,
+          3
+        ],
+        "score": 0.5638021230697632,
+        "citation": "[HVF_SOP_3_Engine_Alignment_v2.pdf, Rev 6.0 [Version 2.0], SECTION 2.0 \u2014 POWERPACK HOISTING, 3D ..., Page 2-3]",
+        "chunk_text": "RESTRICTED \u2014 FOR OFFICIAL USE ONLY (DEFENCE PRODUCTION)\nHEAVY VEHICLES FACTORY (HVF) | AVNL AVADI [VER 2.0]\n\nPROPRIETARY DPSU TECHNICAL DOCUMENT (VER 2.0) \u2014 ARMOURED VEHICLES NIGAM LIMITED (MOD, GOVT. OF INDIA)\nUnauthorized reproduction, transmission, or disclosure is punishable under the Official Secrets Act, 1923.\n\nPage 2 of 8\n\nSECTION 2.0 \u2014 POWERPACK HOISTING, 3D GUIDED LOWERING & HYDRAULIC\nTRUNNION SEATING\n\nOperational Execution Protocol (Ver 2.0): The 5.5-tonne integrated powerpack assembly is rigged via a\nprecision 4-point servo hoist and lowered through the armoured deck aperture with real-time proximity\nclearance telemetry before torquing the isolation trunnions. In accordance with Engineering Directive\nECO-HVF-2026-V2-496, the bay technician shall confirm that digital calibration transponder IOT-HVF-1144 is\nsynchronized with the HVF Cloud Manufacturing Execution System. Additionally, id labore velit natus nihil facilis\nid laborum deleniti labore sapiente eius minima corrupti tempora quibusdam, verifying that all sensor telemetry\ncomplies with Class-1 Defence Quality Assurance (DGQA) statistical process capability indices (Cpk \u2265 1.67).\n\nQuality Assurance & Non-Conformance Gate: Any reading exceeding the tight Version 2 tolerance envelope\nin Table Powerpack triggers an automated SCADA safety trip and digital quarantine hold. Specifically, expedita\nveniam enim quaerat blanditiis quos beatae sed nemo, while encrypted data streams from IoT node\nIOT-HVF-3614 are compiled into hull dossier ECO-HVF-2026-V2-627 prior to advancing the assembly to the\nsubsequent bay."
+      },
+      {
+        "passage_number": 4,
+        "chunk_id": "HVF_AVNL_SOP_MBT_EA_309_V2_C0006",
+        "document_id": "HVF/AVNL/SOP-MBT/EA-309-V2",
+        "logical_sop_id": "HVF_SOP_3_Engine_Alignment",
+        "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+        "revision": "Rev 6.0 [Version 2.0] | 30-Oct-2026",
+        "section_title": "3.0.A SHOP-FLOOR EXECUTION & IOT METROLOGY DIRECTIVES (VER 2.0)",
+        "page_number": 4,
+        "page_numbers": [
+          4
+        ],
+        "score": 0.6011010408401489,
+        "citation": "[HVF_SOP_3_Engine_Alignment_v2.pdf, Rev 6.0 [Version 2.0], 3.0.A SHOP-FLOOR EXECUTION & IOT METR..., Page 4]",
+        "chunk_text": "3.0.A SHOP-FLOOR EXECUTION & IOT METROLOGY DIRECTIVES (VER 2.0)\n\nPrior to initiating operation 3.0 on MBT T-90S / Arjun Mk-1A (1500 HP Powerpack System), the bay controller\nshall verify that the IoT telemetry gateway is connected and active. Illum blanditiis aut beatae quidem\nperspiciatis voluptatum accusantium voluptatem veniam deleniti quos quis sapiente veniam cupiditate eum. All\nsensor readings recorded during the cycle must be verified against the tightened Version 2 tolerance bands\nspecified in Table 3.0 below.\n\nTABLE 3.0 \u2014 VERSION 2 TECHNICAL TRACKING & IOT VERIFICATION MATRIX\n\nSTEP\nV2 TECHNICAL PARAMETER /\nCHECKPOINT\n\nV2 ACCEPTANCE\nTOLERANCE\n\nIOT METROLOGY /\nGAUGE\nSAMPLING / HOLD\n\n3.1\nParallel Radial Offset (Cold)\n\u2264 0.035 mm TIR (target -0.10\nmm V)\n\nContinuous Dual-Laser\nAligner\nFull 360\u00b0 Rotation\n\n3.2\nAngular Face Misalignment\n\u2264 0.025 mm per 100 mm\ndiameter\nMulti-Sensor Wireless Aligner\nClockwise Sweep\n\n3.3\nFlexible Coupling Axial Gap\n2.00 mm \u00b1 0.15 mm axial\nfloat\nDigital Depth Micrometer\nPost-Coupling Gate\n\n3.4\nIntermediate Cardan Spline Play\n\u2264 0.04 mm radial spline\nbacklash\nDial Test Indicator Setup\nPort & Starboard\n\n3.5\nCoupling Stud Torque Retention\n210 Nm \u00b1 5 Nm (Loctite\n270)\nCalibrated DC Electronic Tool\nAll 16 Drive Studs\n\nV2 ASSET SERIAL\nNUMBER\n\nMES TELEMETRY\nGATEWAY\nIOT OPERATOR ID\nDGQA VERIFICATION\nV2 DISPOSITION\n\nHVF-V2-2026-674\nIOT-GW-04 / 309-V2\nOP-306 (Biometric)\nDGQA-85 (Crypto-Seal)\nACCEPTED \u2014 PASS\nV2\n\nVERSION 2 HOLD POINT (SECTION 3.0): Ensure all 5 parameters in Table 3.0 are verified via digital telemetry and\nrecorded in the permanent AVNL manufacturing dossier.\n\nRESTRICTED \u2014 FOR OFFICIAL USE ONLY (DEFENCE PRODUCTION)\nHEAVY VEHICLES FACTORY (HVF) | AVNL AVADI [VER 2.0]\n\nPROPRIETARY DPSU TECHNICAL DOCUMENT (VER 2.0) \u2014 ARMOURED VEHICLES NIGAM LIMITED (MOD, GOVT. OF INDIA)\nUnauthorized reproduction, transmission, or disclosure is punishable under the Official Secrets Act, 1923.\n\nPage 4 of 8"
+      },
+      {
+        "passage_number": 5,
+        "chunk_id": "HVF_AVNL_SOP_MBT_EA_309_V2_C0010",
+        "document_id": "HVF/AVNL/SOP-MBT/EA-309-V2",
+        "logical_sop_id": "HVF_SOP_3_Engine_Alignment",
+        "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+        "revision": "Rev 6.0 [Version 2.0] | 30-Oct-2026",
+        "section_title": "5.0.A SHOP-FLOOR EXECUTION & IOT METROLOGY DIRECTIVES (VER 2.0)",
+        "page_number": 6,
+        "page_numbers": [
+          6
+        ],
+        "score": 0.5952879190444946,
+        "citation": "[HVF_SOP_3_Engine_Alignment_v2.pdf, Rev 6.0 [Version 2.0], 5.0.A SHOP-FLOOR EXECUTION & IOT METR..., Page 6]",
+        "chunk_text": "Quality Assurance & Non-Conformance Gate: Any reading exceeding the tight Version 2 tolerance envelope\nin Table Multi-Cyclone triggers an automated SCADA safety trip and digital quarantine hold. Specifically, ea\ndolorum id sit at dolore ducimus nesciunt molestias quam, while encrypted data streams from IoT node\nIOT-HVF-0855 are compiled into hull dossier ECO-HVF-2026-V2-601 prior to advancing the assembly to the\nsubsequent bay.\n\n5.0.A SHOP-FLOOR EXECUTION & IOT METROLOGY DIRECTIVES (VER 2.0)\n\nPrior to initiating operation 5.0 on MBT T-90S / Arjun Mk-1A (1500 HP Powerpack System), the bay controller\nshall verify that the IoT telemetry gateway is connected and active. Repellendus consequatur deleniti ducimus\nhic delectus assumenda corrupti quibusdam earum aliquam dolorum vitae corporis. All sensor readings\nrecorded during the cycle must be verified against the tightened Version 2 tolerance bands specified in Table\n5.0 below.\n\nTABLE 5.0 \u2014 VERSION 2 TECHNICAL TRACKING & IOT VERIFICATION MATRIX\n\nSTEP\nV2 TECHNICAL PARAMETER /\nCHECKPOINT\n\nV2 ACCEPTANCE\nTOLERANCE\n\nIOT METROLOGY /\nGAUGE\nSAMPLING / HOLD\n\n5.1\nAir Intake Vacuum Integrity\nHold -20 kPa for 180\nseconds\n\nDigital Vacuum Pressure\nSensor\nCompressor Inlets\n\n5.2\nVortex Dust Scavenge Blower\n\u2265 99.2% desert sand\nseparation\nDifferential Flow Transducer\nScavenge Exit Port\n\n5.3\nTurbo Clamp Retaining Torque\n32 Nm \u00b1 1.5 Nm with nickel\npaste\n\nCalibrated Torque\nScrewdriver\nAll Exhaust Clamps\n\n5.4\nFording Check Valve Ingress\nZero water entry @ 0.6 bar\nhead\nHydrostatic Immersion Rig\nFording Solenoids\n\n5.5\nThermal Aerogel Shield Surface\nOuter shell \u2264 115\u00b0C at full\npower\n\nCalibrated FLIR Thermal\nCamera\nFull Exhaust Bay\n\nV2 ASSET SERIAL\nNUMBER\n\nMES TELEMETRY\nGATEWAY\nIOT OPERATOR ID\nDGQA VERIFICATION\nV2 DISPOSITION\n\nHVF-V2-2026-038\nIOT-GW-04 / 309-V2\nOP-992 (Biometric)\nDGQA-80 (Crypto-Seal)\nACCEPTED \u2014 PASS\nV2\n\nVERSION 2 HOLD POINT (SECTION 5.0): Ensure all 5 parameters in Table 5.0 are verified via digital telemetry and\nrecorded in the permanent AVNL manufacturing dossier.\n\nRESTRICTED \u2014 FOR OFFICIAL USE ONLY (DEFENCE PRODUCTION)\nHEAVY VEHICLES FACTORY (HVF) | AVNL AVADI [VER 2.0]"
+      }
+    ]
+  }
+}
