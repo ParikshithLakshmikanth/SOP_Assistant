@@ -2328,21 +2328,160 @@ def format_component_citation(comp: Dict[str, Any]) -> str:
     return f"[{fname}, {rev}, {sec_clean}, Page {page}]"
 
 
+DEFAULT_GLOSSARY_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "component_glossary.json")
+
+
+def load_component_glossary(glossary_path: Optional[str] = None) -> Dict[str, Any]:
+    """Loads the structured component glossary from JSON storage."""
+    path = glossary_path or DEFAULT_GLOSSARY_PATH
+    if not os.path.exists(path):
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        logger.error(f"Failed to load component glossary from {path}: {e}")
+        return {}
+
+
+def lookup_component_glossary(
+    query_or_name: str,
+    glossary_path: Optional[str] = None
+) -> Optional[Dict[str, Any]]:
+    """
+    Looks up a component or subsystem definition in the glossary by canonical name,
+    alias, or query phrase.
+    """
+    glossary = load_component_glossary(glossary_path)
+    if not glossary or not query_or_name:
+        return None
+
+    ql = query_or_name.lower().strip()
+    ql_clean = re.sub(r'[^a-z0-9\s]', ' ', ql)
+    tokens = [
+        w for w in ql_clean.split()
+        if w not in {
+            'what', 'is', 'a', 'an', 'the', 'does', 'do', 'define', 'explain',
+            'in', 'simple', 'words', 'terms', 'tell', 'me', 'about', 'mean',
+            'meaning', 'of', 'please', 'describe'
+        }
+    ]
+    candidate = ' '.join(tokens).strip()
+    if not candidate:
+        candidate = ql_clean.strip()
+
+    # 1. Exact match on glossary key
+    if candidate in glossary:
+        return glossary[candidate]
+
+    # 2. Exact match on canonical name or alias
+    for key, data in glossary.items():
+        canonical = data.get("canonical_name", "").lower()
+        aliases = [a.lower() for a in data.get("aliases", [])]
+        if candidate == canonical or candidate in aliases:
+            return data
+
+    # 3. Substring match
+    for key, data in glossary.items():
+        if key in candidate or any(a in candidate for a in [al.lower() for al in data.get("aliases", [])]):
+            return data
+
+    # 4. Partial token overlap
+    for key, data in glossary.items():
+        if candidate in key:
+            return data
+
+    return None
+
+
+def format_basic_definition_response(
+    entry: Dict[str, Any],
+    query: str = ""
+) -> Tuple[str, List[Dict[str, Any]]]:
+    """
+    Formats a beginner-friendly 6-part component definition response strictly grounded
+    in validated SOP evidence and engineering glossary metadata.
+    
+    Structure:
+    1. **What it is**
+    2. **What it does**
+    3. **Where it fits**
+    4. **Related parts**
+    5. **SOP reference**
+    6. **Evidence note**
+    """
+    name = entry.get("canonical_name", "Component")
+    what_it_is = entry.get("what_it_is", "")
+    what_it_does = entry.get("what_it_does", "")
+    where_it_fits = entry.get("where_it_fits", "Primary Vehicle Assembly")
+
+    related = entry.get("related_parts", [])
+    rel_str = ", ".join(related) if related else "None explicitly documented in this section."
+
+    explicit_rels = entry.get("explicit_relationships", [])
+    if explicit_rels:
+        rel_lines = [f"- {r}" for r in explicit_rels]
+        related_section = f"{rel_str}\n\n*Verified Connections:*\n" + "\n".join(rel_lines)
+    else:
+        related_section = rel_str
+
+    doc = entry.get("sop_filename", "HVF SOP")
+    rev = entry.get("revision", "Baseline / Revised")
+    sec = entry.get("section", "Section 1.0")
+    pg = entry.get("page_number", 1)
+    sop_ref_text = f"{doc} ({rev}), {sec}, Page {pg}"
+
+    status = entry.get("evidence_status", "DIRECTLY_STATED")
+    context_note = entry.get("general_context_note", "")
+    if status == "DIRECTLY_STATED":
+        evidence_note = f"**DIRECTLY_STATED**: Documented directly in {doc} ({rev}). {context_note}"
+    elif status == "INFERRED":
+        evidence_note = f"**INFERRED**: Interpretation derived from documented functions and interface requirements in {doc}. {context_note}"
+    else:
+        evidence_note = (
+            "**GENERAL_CONTEXT**: The available SOP passages identify this component but do not provide an exhaustive definition. "
+            f"This explanation reflects standard armoured vehicle engineering context alongside documented SOP parameters. {context_note}"
+        )
+
+    text_parts = [
+        f"### {name}\n",
+        f"**What it is**\n{what_it_is}\n",
+        f"**What it does**\n{what_it_does}\n",
+        f"**Where it fits**\n{where_it_fits}\n",
+        f"**Related parts**\n{related_section}\n",
+        f"**SOP reference**\n{sop_ref_text}\n",
+        f"**Evidence note**\n{evidence_note}"
+    ]
+    response_text = "\n".join(text_parts)
+
+    citations = [{
+        "document_id": doc,
+        "logical_sop_id": doc.replace(".pdf", ""),
+        "revision": rev,
+        "section": sec,
+        "page_number": pg,
+        "chunk_id": f"GLOSSARY-{name.upper().replace(' ', '_')[:24]}",
+        "score": 1.0,
+        "text_excerpt": f"{name}: {what_it_is} {what_it_does}"
+    }]
+
+    return response_text, citations
+
+
 def detect_component_intent(
     query: str,
     index_dir: str = DEFAULT_INDEX_DIR
 ) -> Dict[str, Any]:
     """
-    Detects whether a user query is asking about equipment components, assemblies,
-    subsystems, functions, relationships, revision changes, or general procedures.
-    
-    Categories:
-    - A: COMPONENT_OVERVIEW (Component overview / list / parts breakdown)
-    - B: COMPONENT_FUNCTION (Individual component explanation / function)
-    - C: ASSEMBLY_SUBSYSTEM (Assembly or subsystem explanation)
-    - D: COMPONENT_RELATIONSHIPS (Component relationships / connections / interfaces)
-    - E: REVISION_CHANGES (V1 versus V2 component changes)
-    - F: GENERAL_PROCEDURAL (General SOP procedural questions, standard RAG)
+    Detects user query intent across 8 categories:
+    1. GENERAL_CONVERSATION: Conversational greetings, pleasantries, acknowledgments
+    2. REVISION_CHANGES: V1 vs V2 component and procedural changes
+    3. COMPONENT_RELATIONSHIPS: Component connections, interfaces, differences
+    4. COMPONENT_OVERVIEW / ASSEMBLY_SUBSYSTEM: Component list, parts breakdown, assembly details
+    5. COMPONENT_FUNCTION: Operational purpose, function, role
+    6. BASIC_DEFINITION: Beginner-friendly definitions of components / subsystems
+    7. TECHNICAL_SPECIFICATION: Specific mechanical tolerances, thicknesses, dimensions
+    8. GENERAL_PROCEDURAL: Procedural execution, welding, maintenance, standard RAG
     """
     if not query or not query.strip():
         return {
@@ -2355,6 +2494,23 @@ def detect_component_intent(
         }
 
     ql = query.lower().strip()
+    ql_clean = re.sub(r'[^a-z0-9\s]', '', ql)
+
+    # 1. Category G: GENERAL_CONVERSATION (Greetings, pleasantries)
+    greetings = {
+        'hi', 'hello', 'hey', 'greetings', 'good morning', 'good afternoon',
+        'good evening', 'thanks', 'thank you', 'bye', 'help', 'who are you',
+        'what can you do', 'ok', 'okay'
+    }
+    if ql_clean in greetings or re.match(r'^(hi|hello|hey|greetings|good\s+(?:morning|afternoon|evening)|help)[\s!.]*$', ql):
+        return {
+            "is_component_intent": False,
+            "category": "GENERAL_CONVERSATION",
+            "category_code": "G",
+            "matched_entities": [],
+            "confidence": 0.99,
+            "reason": "Query is a conversational greeting or pleasantry; skips document retrieval."
+        }
 
     # Extract matched component entities from metadata if available
     matched_entities: List[str] = []
@@ -2376,40 +2532,68 @@ def detect_component_intent(
     except Exception:
         pass
 
-    # Category E: V1 vs V2 Component Changes
+    # 2. Category E: V1 vs V2 Component / Procedure Changes (REVISION_CHANGES)
     rev_change_pattern = (
         re.search(r'\b(what\s+changed|changes?|differences?|compare)\b.*\b(v1|v2|baseline|revised|revision)\b', ql)
         or 'v1 and v2' in ql or 'between v1 and v2' in ql or 'v1 versus v2' in ql
     )
-    comp_indicator_pattern = re.search(r'\b(components?|parts?|assembl(?:y|ies)|subsystems?|materials?|hardware)\b', ql)
-    if rev_change_pattern and comp_indicator_pattern:
+    comp_indicator_pattern = re.search(r'\b(components?|parts?|assembl(?:y|ies)|subsystems?|materials?|hardware|welding|procedure)\b', ql)
+    if rev_change_pattern and (comp_indicator_pattern or 'v2' in ql or 'v1' in ql):
         return {
             "is_component_intent": True,
             "category": "REVISION_CHANGES",
             "category_code": "E",
             "matched_entities": matched_entities,
             "confidence": 0.95,
-            "reason": "Query asks about differences/changes in components between revisions."
+            "reason": "Query asks about differences/changes in components or procedures between revisions."
         }
 
-    # Category D: Component Relationships
+    # 3. Category D: Component Relationships / Differences between components
     rel_pattern = re.search(
         r'\b(how\s+are\s+(?:these\s+|the\s+)?components\s+related|relationship\s+between|relationships?\s+of|'
         r'connect(?:ed|s)?\s+(?:to|with)|interface(?:s)?\s+with|interact(?:s)?\s+with|'
-        r'mounted?\s+(?:to|on)|how\s+do\s+.*\s+(?:connect|interface|relate))\b',
+        r'mounted?\s+(?:to|on)|how\s+do\s+.*\s+(?:connect|interface|relate)|'
+        r'how\s+is\s+.*\s+(?:connect|connected|interfaced|related)|'
+        r'difference\s+between\s+(?:a\s+|the\s+)?.*\s+and\s+(?:a\s+|the\s+)?)\b',
         ql
     )
-    if rel_pattern and (len(matched_entities) >= 1 or any(w in ql for w in ['component', 'components', 'part', 'parts', 'assembly', 'related', 'connection'])):
+    if rel_pattern and (len(matched_entities) >= 1 or any(w in ql for w in ['component', 'components', 'part', 'parts', 'assembly', 'related', 'connection', 'connected', 'connect', 'interface', 'difference', 'between'])):
         return {
             "is_component_intent": True,
             "category": "COMPONENT_RELATIONSHIPS",
             "category_code": "D",
             "matched_entities": matched_entities,
             "confidence": 0.92,
-            "reason": "Query asks about relationships, mechanical connections, or interfaces between components."
+            "reason": "Query asks about relationships, mechanical connections, interfaces, or comparative differences between components."
         }
 
-    # Category A: Component Overview / List / Assemblies Breakdown
+    # 4. Category A / C: Component Overview / Breakdown / Assemblies
+    parts_contain_pattern = re.search(
+        r'\b(what\s+are\s+the\s+(?:main\s+|basic\s+)?parts\s+of|'
+        r'what\s+does\s+.*\s+contain|'
+        r'what\s+are\s+the\s+(?:main\s+|basic\s+)?components\s+of|'
+        r'breakdown\s+of\s+(?:the\s+)?(?:components|parts|assemblies))\b',
+        ql
+    )
+    if parts_contain_pattern:
+        if any(w in ql for w in ['powerpack', 'v12 powerpack']):
+            return {
+                "is_component_intent": True,
+                "category": "ASSEMBLY_SUBSYSTEM",
+                "category_code": "C",
+                "matched_entities": matched_entities,
+                "confidence": 0.92,
+                "reason": "Query asks for breakdown of powerpack subsystem components."
+            }
+        return {
+            "is_component_intent": True,
+            "category": "COMPONENT_OVERVIEW",
+            "category_code": "A",
+            "matched_entities": matched_entities,
+            "confidence": 0.90,
+            "reason": "Query asks for an overview, list, or breakdown of equipment components/parts."
+        }
+
     overview_pattern = re.search(
         r'\b(what\s+are\s+the\s+(?:main\s+|basic\s+)?(?:components|parts|assemblies|subsystems)|'
         r'what\s+does\s+.*\s+say\s+about\s+(?:its\s+|the\s+)?(?:main\s+|basic\s+)?(?:components|parts|assemblies|subsystems)|'
@@ -2440,7 +2624,7 @@ def detect_component_intent(
 
     # Category C: Assembly or Subsystem Explanation
     assembly_pattern = re.search(
-        r'\b(explain|describe|detail|overview\s+of|main\s+(?:components|assemblies)\s+of\s+(?:the\s+)?|what\s+(?:does\s+.*\s+say\s+about|are)\s+(?:the\s+)?main\s+assemblies)\b.*\b(assembly|assemblies|subsystem|subsystems|powerpack|mount\s+system|suspension\s+system|turret\s+basket|hull\s+tub|hull\s+welding|hull)\b',
+        r'\b(explain|describe|detail|overview\s+of|main\s+(?:components|assemblies)\s+of\s+(?:the\s+)?|what\s+(?:does\s+.*\s+say\s+about|are)\s+(?:the\s+)?main\s+assemblies)\b.*\b(assembly|assemblies|subsystem|subsystems|powerpack|mount\s+system|suspension\s+system|turret\s+basket|hull\s+tub|hull\s+welding)\b',
         ql
     ) or any(w in ql for w in ['v12 powerpack', 'turret basket assembly', 'needle-bearing housing assembly'])
     if assembly_pattern:
@@ -2453,14 +2637,12 @@ def detect_component_intent(
             "reason": "Query asks to explain or detail a complex assembly or subsystem."
         }
 
-    # Category B: Individual Component Explanation / Function
+    # 5. Category B: Individual Component Explanation / Function
     func_pattern = re.search(
-        r'\b(function\s+of|purpose\s+of|role\s+of|what\s+does\s+(?:the\s+|a\s+)?.*do|what\s+is\s+(?:the\s+|a\s+)?(?:function|purpose)|'
-        r'what\s+is\s+(?:the\s+|a\s+)?(?:\w+\s+)?(?:bearing|bar|damper|plate|evacuator|pinion|valve|coupling|sensor|isolator|flange)|'
-        r'explain\s+the\s+(?:\w+\s+)?(?:bearing|bar|damper|plate|evacuator|pinion|valve|coupling|sensor|isolator|flange))\b',
+        r'\b(function\s+of|purpose\s+of|role\s+of|what\s+does\s+(?:the\s+|a\s+)?.*do|what\s+is\s+(?:the\s+|a\s+)?(?:function|purpose|role))\b',
         ql
     )
-    if func_pattern or (len(matched_entities) >= 1 and any(w in ql for w in ['function', 'purpose', 'role', 'what is', 'explain', 'what does', 'used for', 'how does'])):
+    if func_pattern or (len(matched_entities) >= 1 and any(w in ql for w in ['function', 'purpose', 'role', 'what does', 'used for'])):
         return {
             "is_component_intent": True,
             "category": "COMPONENT_FUNCTION",
@@ -2470,7 +2652,41 @@ def detect_component_intent(
             "reason": "Query asks about the specific operational function or role of an individual component."
         }
 
-    # Category F: General SOP Procedural Questions (Default)
+    # 6. Category BASIC_DEFINITION: Beginner-friendly Definition of Component / Subsystem
+    def_pattern = re.search(
+        r'^(?:what\s+is\s+(?:an?\s+|the\s+)?|what\s+exactly\s+is\s+(?:an?\s+|the\s+)?|'
+        r'define\s+(?:an?\s+|the\s+)?|tell\s+me\s+about\s+(?:an?\s+|the\s+)?|'
+        r'explain\s+(?:an?\s+|the\s+)?|'
+        r'what\s+does\s+(?:an?\s+|the\s+)?.*\s+mean\??|'
+        r'what\s+is\s+meant\s+by\s+(?:an?\s+|the\s+)?)([^?]+)\??$',
+        ql
+    )
+    if def_pattern:
+        subject = def_pattern.group(1).strip()
+        spec_words = ['preheating', 'temperature', 'torque', 'tolerance', 'thickness', 'pressure', 'clearance', 'voltage', 'rpm']
+        proc_words = ['procedure', 'sequence', 'process', 'step', 'how']
+        if not any(w in subject for w in spec_words + proc_words):
+            return {
+                "is_component_intent": True,
+                "category": "BASIC_DEFINITION",
+                "category_code": "DEF",
+                "matched_entities": matched_entities,
+                "confidence": 0.95,
+                "reason": f"Query asks for a basic definition or beginner explanation of '{subject}'."
+            }
+
+    # 7. Category TECHNICAL_SPECIFICATION: Specific mechanical tolerances, dimensions, thicknesses
+    if ('thickness' in ql or 'tolerance' in ql) and not any(w in ql for w in ['preheating temperature', 'torque sequence']):
+        return {
+            "is_component_intent": False,
+            "category": "TECHNICAL_SPECIFICATION",
+            "category_code": "SPEC",
+            "matched_entities": matched_entities,
+            "confidence": 0.88,
+            "reason": "Query asks for technical specification parameters, dimensions, or tolerances."
+        }
+
+    # 8. Category F: General SOP Procedural Questions (Default)
     return {
         "is_component_intent": False,
         "category": "GENERAL_PROCEDURAL",
@@ -2595,6 +2811,20 @@ def retrieve_component_aware_evidence(
             effective_mode = "v1"
         elif r_str in ["all", "all_revisions", "all revisions"] or r_str.startswith("all revisions"):
             effective_mode = "all"
+
+    # Fast bypass for pure conversational greetings
+    if intent.get("category") == "GENERAL_CONVERSATION":
+        return {
+            "chunks": [],
+            "components": [],
+            "supporting_entities": [],
+            "relationships": [],
+            "intent": intent,
+            "is_component_query": False,
+            "revision_policy": effective_mode,
+            "total_components_scanned": 0,
+            "filtered_components_count": 0
+        }
 
     # Retrieve semantic chunks from FAISS with consistent revision mode
     chunks = retrieve_relevant_chunks(
@@ -3060,9 +3290,51 @@ def generate_rag_answer(
             - eval_count (int)
             - status (str)
     """
+    effective_question, antecedent_comp = resolve_conversational_query(question, conversation_history, index_dir=index_dir)
+    initial_intent = detect_component_intent(effective_question, index_dir=index_dir)
+
+    # 1. Fast conversational greeting response
+    if initial_intent.get("category") == "GENERAL_CONVERSATION":
+        greeting_text = (
+            "Hello! I am the Intelligent SOP Document Assistant for Heavy Vehicles Factory (HVF) / "
+            "Armoured Vehicles Nigam Limited (AVNL). I can help explain components, assemblies, "
+            "engineering definitions, SOP procedures, technical tolerances, and revision impact analysis "
+            "across V1 and V2 baseline documents. How can I assist you today?"
+        )
+        return {
+            "answer": greeting_text,
+            "citations": [],
+            "is_insufficient": False,
+            "is_cross_revision": False,
+            "component_intent": initial_intent,
+            "is_component_query": False,
+            "model": model,
+            "tokens_per_second": 0.0,
+            "eval_count": len(greeting_text.split()),
+            "status": "success"
+        }
+
+    # 2. Direct component glossary lookup for basic definitions
+    if initial_intent.get("category") == "BASIC_DEFINITION" and retrieved_chunks is None:
+        glossary_entry = lookup_component_glossary(effective_question)
+        if glossary_entry:
+            def_text, def_citations = format_basic_definition_response(glossary_entry, effective_question)
+            return {
+                "answer": def_text,
+                "citations": def_citations,
+                "is_insufficient": False,
+                "is_cross_revision": False,
+                "component_intent": initial_intent,
+                "is_component_query": True,
+                "model": model,
+                "tokens_per_second": 0.0,
+                "eval_count": len(def_text.split()),
+                "status": "success"
+            }
+
     if retrieved_chunks is None:
         evidence_data = retrieve_component_aware_evidence(
-            query=question,
+            query=effective_question,
             top_k_chunks=top_k,
             document_id=document_id,
             logical_sop_id=logical_sop_id,
@@ -3080,10 +3352,10 @@ def generate_rag_answer(
         intent = evidence_data.get("intent", {})
     else:
         chunks = retrieved_chunks
-        intent = detect_component_intent(question, index_dir=index_dir)
+        intent = detect_component_intent(effective_question, index_dir=index_dir)
         if intent.get("is_component_intent", False):
             evidence_data = retrieve_component_aware_evidence(
-                query=question,
+                query=effective_question,
                 top_k_chunks=top_k,
                 document_id=document_id,
                 logical_sop_id=logical_sop_id,
@@ -3265,6 +3537,26 @@ def answer_question(
     """
     retrieval_t0 = time.time()
     effective_question, antecedent_comp = resolve_conversational_query(question, conversation_history, index_dir=index_dir)
+    initial_intent = detect_component_intent(effective_question, index_dir=index_dir)
+
+    # 1. Fast handling of greetings or basic definitions via generate_rag_answer
+    if initial_intent.get("category") in ("GENERAL_CONVERSATION", "BASIC_DEFINITION"):
+        rag_output = generate_rag_answer(
+            question=effective_question,
+            top_k=top_k,
+            document_id=document_id,
+            logical_sop_id=logical_sop_id,
+            revision=revision,
+            revision_mode=revision_mode,
+            conversation_history=conversation_history,
+            endpoint=endpoint,
+            model=model,
+            index_dir=index_dir
+        )
+        rag_output["retrieval_duration_ms"] = round((time.time() - retrieval_t0) * 1000.0, 2)
+        rag_output["antecedent_component"] = antecedent_comp
+        return rag_output
+
     evidence_data = retrieve_component_aware_evidence(
         query=effective_question,
         top_k_chunks=top_k,
@@ -3329,6 +3621,53 @@ def stream_rag_answer(
     """
     retrieval_t0 = time.time()
     effective_question, antecedent_comp = resolve_conversational_query(question, conversation_history, index_dir=index_dir)
+    initial_intent = detect_component_intent(effective_question, index_dir=index_dir)
+
+    # 1. Immediate handling of conversational greetings (no FAISS retrieval or model latency)
+    if initial_intent.get("category") == "GENERAL_CONVERSATION":
+        greeting_msg = (
+            "Hello! I am the Intelligent SOP Document Assistant for Heavy Vehicles Factory (HVF) / "
+            "Armoured Vehicles Nigam Limited (AVNL). I can help explain components, assemblies, "
+            "engineering definitions, SOP procedures, technical tolerances, and revision impact analysis "
+            "across V1 and V2 baseline documents. How can I assist you today?"
+        )
+        def greeting_gen():
+            words = greeting_msg.split(" ")
+            for idx, w in enumerate(words):
+                yield w + (" " if idx < len(words) - 1 else "")
+        info = {
+            "retrieval_duration_ms": 0.0,
+            "retrieved_chunks_count": 0,
+            "retrieved_components_count": 0,
+            "component_intent": initial_intent,
+            "is_component_query": False,
+            "is_insufficient": False,
+            "is_cross_revision": False,
+            "is_greeting": True
+        }
+        return greeting_gen(), [], info
+
+    # 2. Direct component glossary lookup for basic definitions
+    if initial_intent.get("category") == "BASIC_DEFINITION":
+        glossary_entry = lookup_component_glossary(effective_question)
+        if glossary_entry:
+            def_text, def_citations = format_basic_definition_response(glossary_entry, effective_question)
+            def glossary_gen():
+                tokens = re.split(r'(\s+)', def_text)
+                for t in tokens:
+                    yield t
+            info = {
+                "retrieval_duration_ms": round((time.time() - retrieval_t0) * 1000.0, 2),
+                "retrieved_chunks_count": len(def_citations),
+                "retrieved_components_count": 1,
+                "component_intent": initial_intent,
+                "is_component_query": True,
+                "is_insufficient": False,
+                "is_cross_revision": False,
+                "glossary_match": glossary_entry.get("canonical_name")
+            }
+            return glossary_gen(), def_citations, info
+
     evidence_data = retrieve_component_aware_evidence(
         query=effective_question,
         top_k_chunks=top_k,

@@ -1,0 +1,653 @@
+{
+  "hull": {
+    "canonical_name": "Armoured Hull Tub Assembly",
+    "aliases": [
+      "hull",
+      "armoured hull",
+      "hull tub",
+      "hull structure",
+      "hull assembly",
+      "main hull body"
+    ],
+    "entity_type": "ASSEMBLY",
+    "what_it_is": "The armoured hull is the primary welded monocoque structural chassis and ballistic envelope of the combat vehicle that houses the crew, powerpack, ammunition, and internal sub-systems.",
+    "what_it_does": "It provides all-aspect ballistic protection against direct kinetic and chemical threats, absorbs dynamic operational shock from terrain and main gun recoil, and maintains rigid dimensional alignment across the suspension, engine bed, and turret interface plinths.",
+    "where_it_fits": "Primary Vehicle Chassis and Base Structure.",
+    "related_parts": [
+      "Lower Hull Plate",
+      "Glacis Plate",
+      "Sponson Box",
+      "Transverse Bulkheads",
+      "Turret Ring Plinth",
+      "Torsion Bar Station Bores"
+    ],
+    "explicit_relationships": [
+      "Lower Hull Plate and Glacis Plate are joined via submerged arc / robotic GMAW to form the hull tub envelope.",
+      "Turret Ring Plinth is machined directly into the upper deck of the hull tub.",
+      "Transverse bulkheads are welded across the lower hull plate to provide lateral stiffness."
+    ],
+    "sop_filename": "HVF_SOP_1_Hull_Welding.pdf",
+    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "section": "SECTION 1.0 & SECTION 2.0",
+    "page_number": 2,
+    "evidence_status": "DIRECTLY_STATED",
+    "general_context_note": "The hull's role as the welded armoured chassis tub and its constituent plates and assemblies are directly stated in the Hull Welding SOP; its broader role as the primary vehicle body is general engineering context."
+  },
+  "hull plate": {
+    "canonical_name": "Armoured Hull Plate",
+    "aliases": [
+      "hull plate",
+      "armour plate",
+      "hull plates",
+      "armour hull plate"
+    ],
+    "entity_type": "PHYSICAL_COMPONENT",
+    "what_it_is": "Heavy rolled homogeneous armour (RHA) high-hard alloy steel structural plates fabricated according to defense metallurgical specifications.",
+    "what_it_does": "Forms the protective structural boundaries of the vehicle tub, designed to resist high-velocity ballistic impacts and structural deformation.",
+    "where_it_fits": "Armoured Hull Tub Assembly.",
+    "related_parts": [
+      "Lower Hull Plate",
+      "Glacis Plate",
+      "Sponson Box",
+      "Weld Joint Root Backing Strip"
+    ],
+    "explicit_relationships": [
+      "Welded together using multi-pass submerged arc or gas metal arc welding.",
+      "Root gaps and preheat temperatures are strictly controlled before joint welding."
+    ],
+    "sop_filename": "HVF_SOP_1_Hull_Welding.pdf",
+    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "section": "SECTION 1.1 & SECTION 2.1",
+    "page_number": 2,
+    "evidence_status": "DIRECTLY_STATED",
+    "general_context_note": ""
+  },
+  "lower hull plate": {
+    "canonical_name": "Lower Hull Plate",
+    "aliases": [
+      "lower hull plate",
+      "belly plate",
+      "bottom plate",
+      "hull floor"
+    ],
+    "entity_type": "PHYSICAL_COMPONENT",
+    "what_it_is": "The heavy bottom floor plate of the armoured vehicle tub fabricated from high-strength armoured plate steel.",
+    "what_it_does": "Forms the structural floor of the hull, defends against mine and underbody blast energy, and provides foundation mounting points for transverse bulkheads and suspension tube sleeves.",
+    "where_it_fits": "Armoured Hull Tub Assembly (Bottom Floor).",
+    "related_parts": [
+      "Glacis Plate",
+      "Sponson Box",
+      "Transverse Bulkheads",
+      "Torsion Bar Station Bores"
+    ],
+    "explicit_relationships": [
+      "Mated to the glacis plate at the frontal nose and to sponson boxes along the lateral flanks.",
+      "Tack welded at controlled pitch prior to automated robotic weld passes."
+    ],
+    "sop_filename": "HVF_SOP_1_Hull_Welding.pdf",
+    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "section": "SECTION 1.1",
+    "page_number": 2,
+    "evidence_status": "DIRECTLY_STATED",
+    "general_context_note": ""
+  },
+  "glacis plate": {
+    "canonical_name": "Glacis Plate",
+    "aliases": [
+      "glacis plate",
+      "glacis",
+      "upper frontal plate",
+      "front slope plate"
+    ],
+    "entity_type": "PHYSICAL_COMPONENT",
+    "what_it_is": "The thick, highly sloped forward armour plate shielding the front of the vehicle hull.",
+    "what_it_does": "Presents a steeply angled ballistic profile to ricochet and defeat incoming kinetic and shaped-charge projectiles across the vehicle's frontal arc.",
+    "where_it_fits": "Armoured Hull Tub Assembly (Frontal Arc).",
+    "related_parts": [
+      "Lower Hull Plate",
+      "Sponson Box",
+      "Driver Hatch Aperture",
+      "Weld Joint Root Backing Strip"
+    ],
+    "explicit_relationships": [
+      "Welded to the lower hull plate along the frontal transverse nose seam with verified root gap tolerances (2.5 mm \u00b1 0.5 mm in V1, 2.0 mm \u00b1 0.3 mm in V2).",
+      "Joined to lateral sponson box plates."
+    ],
+    "sop_filename": "HVF_SOP_1_Hull_Welding.pdf",
+    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "section": "SECTION 1.2 & SECTION 2.2",
+    "page_number": 2,
+    "evidence_status": "DIRECTLY_STATED",
+    "general_context_note": ""
+  },
+  "sponson box": {
+    "canonical_name": "Sponson Box",
+    "aliases": [
+      "sponson box",
+      "sponson",
+      "sponsons",
+      "sponson boxes"
+    ],
+    "entity_type": "ASSEMBLY",
+    "what_it_is": "The lateral overhanging structural compartments projecting outward from the main hull tub sides over the track runs.",
+    "what_it_does": "Houses electrical wiring looms, fuel cells, air intake filtration ducts, and tools while stiffening the lateral sidewalls of the vehicle hull.",
+    "where_it_fits": "Armoured Hull Tub Assembly (Port and Starboard Sides).",
+    "related_parts": [
+      "Lower Hull Plate",
+      "Glacis Plate",
+      "Track Sponson Flanges"
+    ],
+    "explicit_relationships": [
+      "Welded directly to the side longitudinal plates of the lower hull tub.",
+      "Geometric alignment is verified using coordinate laser metrology."
+    ],
+    "sop_filename": "HVF_SOP_1_Hull_Welding.pdf",
+    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "section": "SECTION 1.3",
+    "page_number": 2,
+    "evidence_status": "DIRECTLY_STATED",
+    "general_context_note": ""
+  },
+  "hull tub assembly": {
+    "canonical_name": "Hull Tub Assembly",
+    "aliases": [
+      "hull tub assembly",
+      "hull tub",
+      "armoured tub",
+      "chassis tub"
+    ],
+    "entity_type": "ASSEMBLY",
+    "what_it_is": "The unified monocoque structural enclosure formed by complete welding of the lower plate, glacis plate, side sponsons, and bulkheads.",
+    "what_it_does": "Acts as the rigid structural core of the entire armored fighting vehicle, supporting all mobility, firepower, and protection assemblies.",
+    "where_it_fits": "Main Battle Tank Chassis.",
+    "related_parts": [
+      "Lower Hull Plate",
+      "Glacis Plate",
+      "Sponson Box",
+      "Turret Ring Plinth Flatness"
+    ],
+    "explicit_relationships": [
+      "Integrates the lower hull, glacis, sponsons, and engine bay bulkheads into a sealed armored unit.",
+      "Undergoes post-weld stress relief and ultrasonic non-destructive flaw detection."
+    ],
+    "sop_filename": "HVF_SOP_1_Hull_Welding.pdf",
+    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "section": "SECTION 1.0 & SECTION 3.0",
+    "page_number": 2,
+    "evidence_status": "DIRECTLY_STATED",
+    "general_context_note": ""
+  },
+  "weld joint": {
+    "canonical_name": "Weld Joint Root Backing Strip",
+    "aliases": [
+      "weld joint",
+      "weld joints",
+      "weld backing strip",
+      "backing strip",
+      "root backing strip"
+    ],
+    "entity_type": "PHYSICAL_COMPONENT",
+    "what_it_is": "A precision backing strip made from ceramic or sacrificial structural steel positioned behind heavy plate weld joints.",
+    "what_it_does": "Supports the molten weld pool during the high-amperage root pass, preventing burn-through and ensuring 100% root penetration across thick armour bevels.",
+    "where_it_fits": "Armoured Plate Seams (Hull and Structure Joints).",
+    "related_parts": [
+      "Lower Hull Plate",
+      "Glacis Plate",
+      "Submerged Arc Weld Seams"
+    ],
+    "explicit_relationships": [
+      "Clamped behind the plate root gap prior to preheating and welding.",
+      "Removed or ground flush during final post-weld quality inspection."
+    ],
+    "sop_filename": "HVF_SOP_1_Hull_Welding.pdf",
+    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "section": "SECTION 2.3",
+    "page_number": 3,
+    "evidence_status": "DIRECTLY_STATED",
+    "general_context_note": ""
+  },
+  "turret": {
+    "canonical_name": "Turret Mount System",
+    "aliases": [
+      "turret",
+      "turret system",
+      "turret structure",
+      "turret basket",
+      "armoured turret"
+    ],
+    "entity_type": "ASSEMBLY",
+    "what_it_is": "The rotating armoured fighting structure mounted atop the vehicle hull that encloses the main gun, sighting systems, and crew stations.",
+    "what_it_does": "Provides 360-degree azimuth fire capability for the main gun and secondary armament while protecting the commander, gunner, and autoloader mechanism.",
+    "where_it_fits": "Upper Vehicle Structure (mounted to the Hull Plinth via Turret Base Ring).",
+    "related_parts": [
+      "Turret Base Ring",
+      "2A46M 125mm Gun Barrel",
+      "Rotary Slip-Ring Assembly",
+      "Azimuth Pinion Drive",
+      "Ballistic Retention Ring"
+    ],
+    "explicit_relationships": [
+      "Mated to the hull deck plinth through the turret bearing and retention ring.",
+      "Connected electrically to the hull via the central rotary slip ring.",
+      "Traversed in azimuth by the dual-pinion anti-backlash drive."
+    ],
+    "sop_filename": "HVF_SOP_2_Turret_Integration.pdf",
+    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "section": "SECTION 1.0 & SECTION 2.0",
+    "page_number": 1,
+    "evidence_status": "DIRECTLY_STATED",
+    "general_context_note": "The mechanical and electrical mating of the turret to the hull is directly stated in the Turret Integration SOP; broader combat vehicle roles are general engineering context."
+  },
+  "turret base ring": {
+    "canonical_name": "Turret Base Ring",
+    "aliases": [
+      "turret base ring",
+      "turret ring",
+      "base ring",
+      "turret bearing ring"
+    ],
+    "entity_type": "PHYSICAL_COMPONENT",
+    "what_it_is": "A precision-forged and machined heavy steel annular ring mounted on the vehicle hull's upper deck plinth.",
+    "what_it_does": "Provides the stationary circular foundation and bearing raceway seat that carries the rotating turret weight and reacts dynamic main gun firing loads.",
+    "where_it_fits": "Turret Integration System / Hull Upper Deck Interface.",
+    "related_parts": [
+      "Cross-Roller Bearing Raceway",
+      "Internal Ring Gear",
+      "Azimuth Pinion Drive",
+      "Ballistic Retention Ring"
+    ],
+    "explicit_relationships": [
+      "Bolted to the hull deck plinth with high-tensile fasteners torqued to 185 Nm (V1) or 210 Nm (V2).",
+      "Seats the bearing raceway that supports the rotating turret basket."
+    ],
+    "sop_filename": "HVF_SOP_2_Turret_Integration.pdf",
+    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "section": "SECTION 1.1 & SECTION 2.1",
+    "page_number": 2,
+    "evidence_status": "DIRECTLY_STATED",
+    "general_context_note": ""
+  },
+  "turret mount": {
+    "canonical_name": "Turret Mount System",
+    "aliases": [
+      "turret mount",
+      "turret mount system",
+      "turret mounting"
+    ],
+    "entity_type": "ASSEMBLY",
+    "what_it_is": "The integrated mechanical assembly comprising the hull plinth, base ring, bearing raceway, and retention hardware supporting the turret.",
+    "what_it_does": "Secures the turret to the hull, provides low-friction 360-degree rotation, and prevents turret dislodgement under high-angle ballistic impacts or vehicle turnover.",
+    "where_it_fits": "Hull-to-Turret Interface.",
+    "related_parts": [
+      "Turret Base Ring",
+      "Ballistic Retention Ring",
+      "Azimuth Pinion Drive",
+      "Cross-Roller Bearing Raceway"
+    ],
+    "explicit_relationships": [
+      "Interfaces the hull plinth directly to the turret basket structure.",
+      "Secured by the ballistic retention ring with calibrated torque-angle fasteners."
+    ],
+    "sop_filename": "HVF_SOP_2_Turret_Integration.pdf",
+    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "section": "SECTION 1.0 & SECTION 2.2",
+    "page_number": 2,
+    "evidence_status": "DIRECTLY_STATED",
+    "general_context_note": ""
+  },
+  "ceramic-hybrid bearing": {
+    "canonical_name": "Ceramic-Hybrid Cross-Roller Bearing",
+    "aliases": [
+      "ceramic-hybrid bearing",
+      "ceramic hybrid bearing",
+      "ceramic bearing",
+      "ceramic cross-roller bearing"
+    ],
+    "entity_type": "ASSEMBLY",
+    "what_it_is": "A heavy-duty precision turret bearing assembly featuring silicon nitride (Si3N4) ceramic rollers alternating between hardened steel raceways.",
+    "what_it_does": "Supports the 18-tonne rotating turret basket on the hull plinth, provides high-rigidity rotational motion with minimal friction, prevents electrical microwelding, and resists brinelling under extreme gun recoil shock.",
+    "where_it_fits": "Turret Integration System (introduced in Rev 5.0 V2 to replace the Rev 4.2 four-point steel ball bearing).",
+    "related_parts": [
+      "Turret Base Ring",
+      "Cross-Roller Bearing Raceway",
+      "Ballistic Retention Ring",
+      "Ceramic Roller Sphericity"
+    ],
+    "explicit_relationships": [
+      "Installed between the stationary turret base ring and the rotating turret basket.",
+      "Ceramic rollers feature sphericity grade tolerance within 0.0005 mm."
+    ],
+    "sop_filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
+    "revision": "Rev 5.0 (Revised / Active)",
+    "section": "SECTION 2.1",
+    "page_number": 2,
+    "evidence_status": "DIRECTLY_STATED",
+    "general_context_note": ""
+  },
+  "engine": {
+    "canonical_name": "V12 Diesel Engine",
+    "aliases": [
+      "engine",
+      "v12 engine",
+      "diesel engine",
+      "main engine"
+    ],
+    "entity_type": "PHYSICAL_COMPONENT",
+    "what_it_is": "A 12-cylinder V-configuration turbocharged, liquid-cooled multi-fuel diesel internal combustion engine producing 1000 hp (735 kW).",
+    "what_it_does": "Generates the prime rotational mechanical power needed to drive the vehicle tracks, auxiliary hydraulic pumps, and onboard electrical generation systems.",
+    "where_it_fits": "V12 Powerpack Assembly (located in the Rear Hull Engine Bay).",
+    "related_parts": [
+      "V12 Powerpack Engine",
+      "Crankshaft-to-Transmission Drive Shaft",
+      "Turbocharger Ducting",
+      "Dry-Sump Lubrication Loop"
+    ],
+    "explicit_relationships": [
+      "Mounted to the hull engine bed via resilient rubber-metal mounts (V1) or active hydromounts (V2).",
+      "Directs rotational power through the crankshaft coupling into the transmission gearbox."
+    ],
+    "sop_filename": "HVF_SOP_3_Engine_Alignment.pdf",
+    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "section": "SECTION 1.0 & SECTION 2.0",
+    "page_number": 1,
+    "evidence_status": "DIRECTLY_STATED",
+    "general_context_note": "Technical alignment tolerances and mount damping are directly stated in the Engine Alignment SOP; general engine operational principles are general engineering context."
+  },
+  "v12 powerpack": {
+    "canonical_name": "V12 Powerpack Engine Assembly",
+    "aliases": [
+      "v12 powerpack",
+      "powerpack",
+      "powerpack engine",
+      "v12 power pack"
+    ],
+    "entity_type": "ASSEMBLY",
+    "what_it_is": "A unified, quick-disconnect power module integrating the 1000-hp V12 diesel engine, cooling radiators, dry-sump lubrication, turbochargers, and electrical interface.",
+    "what_it_does": "Serves as the complete self-contained vehicular power unit designed for rapid field replacement in under 45 minutes using standard recovery crane hoisting.",
+    "where_it_fits": "Rear Engine Bay Compartment of the Hull.",
+    "related_parts": [
+      "Resilient Rubber-Metal Mount",
+      "Active Hydromount Damping",
+      "Crankshaft-to-Transmission Drive Shaft",
+      "Turbocharger Ducting",
+      "Dry-Sump Lubrication Loop"
+    ],
+    "explicit_relationships": [
+      "Connected to the transmission input shaft via a dynamically balanced flexible gear coupling.",
+      "Secured to the hull floor by four calibrated vibration damping mounts."
+    ],
+    "sop_filename": "HVF_SOP_3_Engine_Alignment.pdf",
+    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "section": "SECTION 1.0 & SECTION 2.1",
+    "page_number": 1,
+    "evidence_status": "DIRECTLY_STATED",
+    "general_context_note": ""
+  },
+  "torsion bar": {
+    "canonical_name": "Torsion Bar",
+    "aliases": [
+      "torsion bar",
+      "torsion bars",
+      "suspension torsion bar",
+      "torsion spring"
+    ],
+    "entity_type": "PHYSICAL_COMPONENT",
+    "what_it_is": "A high-strength alloy spring steel cylindrical shaft with precision splined ends that spans transversely across the bottom width of the vehicle hull.",
+    "what_it_does": "Acts as the primary suspension spring for each road wheel; twists elastically under balancer arm deflection to absorb shock loads and support vehicle sprung weight.",
+    "where_it_fits": "Torsion Suspension Subsystem (installed inside transverse hull tube stations).",
+    "related_parts": [
+      "Balancer Arm",
+      "Needle-Bearing Housing",
+      "Road Wheel Hub",
+      "Anchor Plug",
+      "Hydraulic Rotary Damper"
+    ],
+    "explicit_relationships": [
+      "Inboard spline anchors into the opposite hull wall anchor plug; outboard spline locks into the balancer arm hub.",
+      "Preloaded at an initial preset angle of 32\u00b0 \u00b1 0.5\u00b0 before road wheel fitment."
+    ],
+    "sop_filename": "HVF_SOP_4_Torsion_Suspension.pdf",
+    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "section": "SECTION 1.1 & SECTION 2.1",
+    "page_number": 1,
+    "evidence_status": "DIRECTLY_STATED",
+    "general_context_note": ""
+  },
+  "hydromount": {
+    "canonical_name": "Active Hydromount Damping Unit",
+    "aliases": [
+      "hydromount",
+      "hydromounts",
+      "hydraulic mount",
+      "active hydromount",
+      "hydraulic damping mount"
+    ],
+    "entity_type": "PHYSICAL_COMPONENT",
+    "what_it_is": "An advanced fluid-filled elastomeric vibration isolation mount with electronically or hydraulically tuned fluid damping passages.",
+    "what_it_does": "Isolates the vehicle hull and transmission from engine low-frequency torque pulses and attenuates high-frequency vibration during high-speed tactical cross-country operations.",
+    "where_it_fits": "V12 Powerpack Mounting Interface / Engine Bay Hull Pedestals (introduced in Rev 5.0 V2).",
+    "related_parts": [
+      "V12 Powerpack Engine",
+      "Crankshaft-to-Transmission Drive Shaft",
+      "Resilient Rubber-Metal Mount"
+    ],
+    "explicit_relationships": [
+      "Supports the front and rear trunnions of the V12 powerpack in V2.",
+      "Maintains cold radial offset within 0.08 mm under thermal expansion."
+    ],
+    "sop_filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+    "revision": "Rev 5.0 (Revised / Active)",
+    "section": "SECTION 1.2 & SECTION 2.1",
+    "page_number": 2,
+    "evidence_status": "DIRECTLY_STATED",
+    "general_context_note": ""
+  },
+  "track": {
+    "canonical_name": "Double-Pin Track System",
+    "aliases": [
+      "track",
+      "track system",
+      "tracks",
+      "track link",
+      "caterpillar track",
+      "double-pin track"
+    ],
+    "entity_type": "ASSEMBLY",
+    "what_it_is": "An endless continuous articulated belt consisting of forged steel track shoes linked together by rubber-bushed double pins and end-connectors.",
+    "what_it_does": "Distributes the vehicle's 45+ tonne weight across a broad ground contact area, engages the drive sprocket to propel the vehicle, and guides road wheel motion across obstacle terrain.",
+    "where_it_fits": "Running Gear and Suspension Subsystem.",
+    "related_parts": [
+      "Double-Pin Track Link",
+      "Drive Sprocket",
+      "Road Wheel Hub",
+      "Track Pin Wedge & End-Connector",
+      "Idler Crank"
+    ],
+    "explicit_relationships": [
+      "Driven by teeth on the rear drive sprocket; guided by six pairs of road wheels and front idler.",
+      "Static upper track catenary sag is calibrated to 35\u201345 mm in V1 and 25\u201335 mm in V2."
+    ],
+    "sop_filename": "HVF_SOP_4_Torsion_Suspension.pdf",
+    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "section": "SECTION 4.0 & SECTION 5.0",
+    "page_number": 4,
+    "evidence_status": "DIRECTLY_STATED",
+    "general_context_note": ""
+  },
+  "suspension": {
+    "canonical_name": "Torsion Bar Suspension System",
+    "aliases": [
+      "suspension",
+      "suspension system",
+      "torsion suspension",
+      "running gear"
+    ],
+    "entity_type": "SUBSYSTEM",
+    "what_it_is": "The independent high-travel running gear subsystem comprising transverse torsion bars, balancer arms, needle-bearing housings, road wheel hubs, and dampers.",
+    "what_it_does": "Cushions the vehicle against terrain shock, keeps tracks firmly planted on rough soil, and provides stable gun platform dynamics during fire-on-the-move operations.",
+    "where_it_fits": "Lower Hull Running Gear (both Port and Starboard Flanks).",
+    "related_parts": [
+      "Torsion Bar",
+      "Balancer Arm",
+      "Road Wheel Hub",
+      "Hydraulic Rotary Damper",
+      "Drive Sprocket"
+    ],
+    "explicit_relationships": [
+      "Transfers ground reaction forces from the road wheels through the balancer arms into the torsion bars.",
+      "Damped at extreme wheel stations (stations 1, 2, and 6) by heavy-duty hydraulic or magnetorheological rotary dampers."
+    ],
+    "sop_filename": "HVF_SOP_4_Torsion_Suspension.pdf",
+    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "section": "SECTION 1.0 & SECTION 2.0",
+    "page_number": 1,
+    "evidence_status": "DIRECTLY_STATED",
+    "general_context_note": ""
+  },
+  "bearing raceway": {
+    "canonical_name": "Cross-Roller Bearing Raceway",
+    "aliases": [
+      "bearing raceway",
+      "raceway",
+      "roller raceway",
+      "cross-roller raceway"
+    ],
+    "entity_type": "ASSEMBLY",
+    "what_it_is": "Precision induction-hardened concentric steel rings featuring V-grooved tracks that guide the bearing rolling elements.",
+    "what_it_does": "Confines bearing rollers at alternating 90-degree angles to absorb concurrent radial, thrust, and tilting moment loads from the turret.",
+    "where_it_fits": "Turret Base Ring Assembly.",
+    "related_parts": [
+      "Turret Base Ring",
+      "Ceramic Roller Sphericity",
+      "Ballistic Retention Ring"
+    ],
+    "explicit_relationships": [
+      "Machined directly into or mounted upon the turret base ring.",
+      "Surface raceway hardness is verified at 58\u201362 HRC."
+    ],
+    "sop_filename": "HVF_SOP_2_Turret_Integration.pdf",
+    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "section": "SECTION 1.2",
+    "page_number": 2,
+    "evidence_status": "DIRECTLY_STATED",
+    "general_context_note": ""
+  },
+  "ceramic rollers": {
+    "canonical_name": "Silicon Nitride Ceramic Rollers",
+    "aliases": [
+      "ceramic rollers",
+      "ceramic roller",
+      "si3n4 rollers",
+      "ceramic roller sphericity"
+    ],
+    "entity_type": "PHYSICAL_COMPONENT",
+    "what_it_is": "Ultra-hard, precision-ground cylindrical rolling elements manufactured from sintered silicon nitride (Si3N4) ceramic.",
+    "what_it_does": "Rolls within the cross-roller raceway to facilitate turret traverse while eliminating electrical conductivity, resisting corrosion, and preventing galling.",
+    "where_it_fits": "Ceramic-Hybrid Cross-Roller Bearing Assembly (V2).",
+    "related_parts": [
+      "Ceramic-Hybrid Cross-Roller Bearing",
+      "Bearing Raceway",
+      "Turret Base Ring"
+    ],
+    "explicit_relationships": [
+      "Assembled into alternating cross-roller orientation within the V2 turret bearing.",
+      "Inspected for sphericity within 0.0005 mm."
+    ],
+    "sop_filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
+    "revision": "Rev 5.0 (Revised / Active)",
+    "section": "SECTION 2.1",
+    "page_number": 2,
+    "evidence_status": "DIRECTLY_STATED",
+    "general_context_note": ""
+  },
+  "needle-bearing housing": {
+    "canonical_name": "Needle-Bearing Housing",
+    "aliases": [
+      "needle-bearing housing",
+      "needle bearing housing",
+      "balancer arm housing",
+      "needle bearing"
+    ],
+    "entity_type": "ASSEMBLY",
+    "what_it_is": "A heavy-duty machined outer casing enclosing needle rollers, spacer rings, and multi-lip elastomer grease seals.",
+    "what_it_does": "Houses the pivot journal of the balancer arm on the outer hull, providing low-friction angular rotation while resisting extreme radial suspension shock.",
+    "where_it_fits": "Suspension Balancer Arm Hull Station.",
+    "related_parts": [
+      "Balancer Arm",
+      "Labyrinth Seal",
+      "Torsion Bar"
+    ],
+    "explicit_relationships": [
+      "Press-fit into the outer hull suspension station bore.",
+      "Sealed by a labyrinth seal (V1) or triple-lip cassette seal (V2) to exclude water and mud."
+    ],
+    "sop_filename": "HVF_SOP_4_Torsion_Suspension.pdf",
+    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "section": "SECTION 1.2",
+    "page_number": 2,
+    "evidence_status": "DIRECTLY_STATED",
+    "general_context_note": ""
+  },
+  "track system": {
+    "canonical_name": "Track and Running Gear System",
+    "aliases": [
+      "track system",
+      "tracks",
+      "track assembly",
+      "caterpillar track",
+      "endless track"
+    ],
+    "entity_type": "SUBSYSTEM",
+    "what_it_is": "The track system is the continuous articulated band of steel track shoes, rubber-bushed pins, and track pads that encircles the road wheels, idler wheel, and drive sprocket.",
+    "what_it_does": "It distributes vehicle gross combat weight across low ground contact pressure, converts drive sprocket rotational torque into linear tractive tractive effort across cross-country terrain, and provides continuous traction.",
+    "where_it_fits": "Vehicle Running Gear and Mobility Subsystem, mounted along the lower hull flanks outside the torsion bar suspension stations.",
+    "related_parts": [
+      "Track Link / Shoe",
+      "Track Pin",
+      "Drive Sprocket",
+      "Idler Wheel",
+      "Road Wheels",
+      "Torsion Bar Suspension"
+    ],
+    "explicit_relationships": [
+      "Track engages with the drive sprocket teeth to transmit automotive torque.",
+      "Track runs under the suspension road wheels connected to the torsion bar stations."
+    ],
+    "sop_filename": "HVF_SOP_4_Torsion_Suspension.pdf",
+    "revision": "Rev 4.2 / Rev 5.0",
+    "section": "SECTION 1.0 & SECTION 2.0",
+    "page_number": 3,
+    "evidence_status": "DIRECTLY_STATED",
+    "general_context_note": "Suspension station and torsion bar interface documented directly in SOP; track envelope parameters are standard armoured vehicle engineering context."
+  },
+  "engine alignment": {
+    "canonical_name": "Engine-to-Transmission Alignment System",
+    "aliases": [
+      "engine alignment",
+      "powerpack alignment",
+      "engine alignment procedure"
+    ],
+    "entity_type": "ASSEMBLY",
+    "what_it_is": "Engine alignment is the precision mechanical spatial and coaxial positioning of the V12 diesel engine crankshaft output flange relative to the transmission input shaft.",
+    "what_it_does": "It eliminates parallel radial offset and angular face misalignment, preventing catastrophic driveline vibration, premature bearing destruction, flexible coupling shear, and power transmission failure.",
+    "where_it_fits": "Engine Bay Compartment between the V12 Powerpack and the cross-drive hydromechanical transmission.",
+    "related_parts": [
+      "Crankshaft Output Flange",
+      "Transmission Input Flange",
+      "Dial Indicator Gauge",
+      "Laser Alignment Tool",
+      "Alignment Shims",
+      "Hydromounts"
+    ],
+    "explicit_relationships": [
+      "Engine output flange couples to transmission input flange via calibrated elastomeric coupling.",
+      "Precision shim packs under engine hydromounts adjust vertical and lateral alignment."
+    ],
+    "sop_filename": "HVF_SOP_3_Engine_Alignment.pdf",
+    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "section": "SECTION 2.0, SECTION 3.0 & SECTION 4.0",
+    "page_number": 2,
+    "evidence_status": "DIRECTLY_STATED",
+    "general_context_note": "Alignment procedures, dial indicator radial/axial tolerances, and shimming steps are directly stated in the Engine Alignment SOP."
+  }
+}

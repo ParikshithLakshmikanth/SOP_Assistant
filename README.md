@@ -152,6 +152,16 @@ Navigate to **"💬 Technical Consultation Chat"**.
 - Ask natural language questions (e.g., *"What are the main steps in the engine alignment procedure?"*).
 - Select revision preference in the sidebar: **All Revisions (Default)**, **V1 Only**, or **V2 Only**.
 - Observe progressive token streaming with the defense-blue cursor.
+- **Intent-Aware Component Intelligence**: Automatically distinguishes between 8 question types:
+  1. `BASIC_DEFINITION` (*"What is a hull?"* -> structured 6-part beginner-friendly definition: What it is, What it does, Where it fits, Related parts, SOP reference, Evidence note)
+  2. `COMPONENT_FUNCTION` (*"What does a hull do?"* -> operational purpose and role)
+  3. `COMPONENT_BREAKDOWN` (*"What are the main parts of a hull?"* -> physical assemblies)
+  4. `COMPONENT_RELATIONSHIPS` (*"How is the hull connected to the turret?"* -> mechanical interfaces)
+  5. `PROCEDURAL_QUERY` (*"How is the hull welded?"* -> step-by-step SOP execution procedures)
+  6. `TECHNICAL_SPECIFICATION` (*"What is the hull plate thickness?"* -> dimensional tolerances)
+  7. `REVISION_COMPARISON` (*"What changed in hull welding in V2?"* -> delta comparison)
+  8. `GENERAL_CONVERSATION` (*"Hi"* -> instant conversational greeting with zero vector retrieval)
+- **Immediate Generation Cancellation**: Clicking **"⏹ Stop Generation"** aborts inference immediately, preserves partial output with an interrupted tag, persists the conversation state, and allows immediate submission of the next inquiry without page refresh.
 - Click **"Evidence Sources & Citations"** to inspect exact source passages, page numbers, and similarity scores.
 - Click any related component chip at the bottom of the answer to jump directly into the Component Explorer.
 

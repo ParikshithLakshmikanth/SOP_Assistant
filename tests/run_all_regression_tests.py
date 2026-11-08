@@ -6,6 +6,7 @@ import time
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 test_files = [
+    "tests.test_cancellation_and_definitions",
     "tests.test_mini_phase6_reliability",
     "tests.test_integrated_experience",
     "tests.test_component_explorer",

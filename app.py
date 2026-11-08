@@ -323,6 +323,53 @@ init_session_state()
 
 
 # ============================================================================
+# CENTRALIZED NAVIGATION CALLBACKS
+# ============================================================================
+
+def navigate_to_mode(mode: str, **kwargs):
+    """
+    Centralized navigation callback to update operating mode without
+    triggering StreamlitWidgetAlreadyInstantiatedError.
+    Executes in the Streamlit callback phase before widgets are instantiated.
+    """
+    st.session_state["app_mode_radio"] = mode
+    for k, v in kwargs.items():
+        st.session_state[k] = v
+
+
+def ask_ai_component_callback(comp_detail: Dict[str, Any], selected_rev: str):
+    """
+    Callback for 'Ask AI about this component' in Component Explorer.
+    Sets up chat context, revision preference, and conversation before widget instantiation.
+    """
+    st.session_state["app_mode_radio"] = "💬 Technical Consultation Chat"
+    st.session_state["active_component_context"] = {
+        "component_id": comp_detail.get("component_id"),
+        "component_name": comp_detail.get("component_name"),
+        "entity_type": comp_detail.get("entity_type"),
+        "filename": comp_detail.get("filename"),
+        "revision": comp_detail.get("revision"),
+        "section": comp_detail.get("section", comp_detail.get("section_heading", "")),
+        "section_heading": comp_detail.get("section_heading", comp_detail.get("section", "")),
+        "page_number": comp_detail.get("page_number"),
+        "associated_subsystem": comp_detail.get("associated_subsystem")
+    }
+    if selected_rev == "V1 (Baseline / Archival)":
+        st.session_state["revision_preference"] = "V1 Only (Archival Baseline SOPs)"
+    elif selected_rev == "V2 (Active / Revised)":
+        st.session_state["revision_preference"] = "V2 Only (Revised / Active Operational SOPs)"
+    elif selected_rev == "All Revisions":
+        st.session_state["revision_preference"] = "All Revisions (Prioritize V2 / Latest)"
+
+    new_conv = db.create_conversation(f"Component: {comp_detail.get('component_name', 'Unknown')}")
+    st.session_state["current_conv_id"] = new_conv["conversation_id"]
+    st.session_state["pending_chat_prompt"] = (
+        f"Explain the {comp_detail.get('component_name')} ({comp_detail.get('entity_type')}), "
+        f"its documented function, and its relationships based on the SOP evidence."
+    )
+
+
+# ============================================================================
 # BACKEND HEALTH & TELEMETRY
 # ============================================================================
 
@@ -780,25 +827,49 @@ with st.sidebar:
     st.markdown("#### 🧭 Operational Navigation")
     nav_b1, nav_b2 = st.columns(2)
     with nav_b1:
-        if st.button("📊 Dashboard", key="nav_btn_dash", use_container_width=True):
-            st.session_state["app_mode_radio"] = "📊 Executive Dashboard & Telemetry"
-            st.rerun()
-        if st.button("🧩 Components", key="nav_btn_comp", use_container_width=True):
-            st.session_state["app_mode_radio"] = "🧩 Visual & Tabular Component Explorer"
-            st.rerun()
-        if st.button("🔗 Impact Map", key="nav_btn_impact", use_container_width=True):
-            st.session_state["app_mode_radio"] = "🔗 Cross-Document Impact Analysis"
-            st.rerun()
+        st.button(
+            "📊 Dashboard",
+            key="nav_btn_dash",
+            use_container_width=True,
+            on_click=navigate_to_mode,
+            args=("📊 Executive Dashboard & Telemetry",)
+        )
+        st.button(
+            "🧩 Components",
+            key="nav_btn_comp",
+            use_container_width=True,
+            on_click=navigate_to_mode,
+            args=("🧩 Visual & Tabular Component Explorer",)
+        )
+        st.button(
+            "🔗 Impact Map",
+            key="nav_btn_impact",
+            use_container_width=True,
+            on_click=navigate_to_mode,
+            args=("🔗 Cross-Document Impact Analysis",)
+        )
     with nav_b2:
-        if st.button("💬 Chatbot", key="nav_btn_chat", use_container_width=True):
-            st.session_state["app_mode_radio"] = "💬 Technical Consultation Chat"
-            st.rerun()
-        if st.button("⚖️ Revision Diff", key="nav_btn_diff", use_container_width=True):
-            st.session_state["app_mode_radio"] = "⚖️ SOP Revision Comparison Engine"
-            st.rerun()
-        if st.button("📥 Upload SOP", key="nav_btn_upload", use_container_width=True):
-            st.session_state["app_mode_radio"] = "📥 Ingest & Manage SOP Documents"
-            st.rerun()
+        st.button(
+            "💬 Chatbot",
+            key="nav_btn_chat",
+            use_container_width=True,
+            on_click=navigate_to_mode,
+            args=("💬 Technical Consultation Chat",)
+        )
+        st.button(
+            "⚖️ Revision Diff",
+            key="nav_btn_diff",
+            use_container_width=True,
+            on_click=navigate_to_mode,
+            args=("⚖️ SOP Revision Comparison Engine",)
+        )
+        st.button(
+            "📥 Upload SOP",
+            key="nav_btn_upload",
+            use_container_width=True,
+            on_click=navigate_to_mode,
+            args=("📥 Ingest & Manage SOP Documents",)
+        )
 
     app_mode_options = [
         "📊 Executive Dashboard & Telemetry",
@@ -808,13 +879,14 @@ with st.sidebar:
         "🔗 Cross-Document Impact Analysis",
         "📥 Ingest & Manage SOP Documents"
     ]
-    curr_mode = st.session_state.get("app_mode_radio", app_mode_options[0])
-    mode_index = app_mode_options.index(curr_mode) if curr_mode in app_mode_options else 0
+
+    # Consume pending navigation mode before widget instantiation if set
+    if "pending_app_mode" in st.session_state and st.session_state["pending_app_mode"]:
+        st.session_state["app_mode_radio"] = st.session_state.pop("pending_app_mode")
 
     app_mode = st.radio(
         "Select Operating Mode:",
         app_mode_options,
-        index=mode_index,
         key="app_mode_radio"
     )
     st.divider()
@@ -1228,19 +1300,32 @@ def render_seven_stage_upload(key_suffix: str = "main"):
                     # Action buttons
                     b_col1, b_col2, b_col3 = st.columns(3)
                     with b_col1:
-                        if st.button("💬 Ask AI about this document", key=f"ask_doc_{uploaded_file.name}_{key_suffix}", type="primary", use_container_width=True):
-                            st.session_state["pending_chat_prompt"] = f"Summarize the technical procedures, safety warnings, and component requirements in {uploaded_file.name}."
-                            st.session_state["app_mode_radio"] = "💬 Technical Consultation Chat"
-                            st.rerun()
+                        st.button(
+                            "💬 Ask AI about this document",
+                            key=f"ask_doc_{uploaded_file.name}_{key_suffix}",
+                            type="primary",
+                            use_container_width=True,
+                            on_click=navigate_to_mode,
+                            args=("💬 Technical Consultation Chat",),
+                            kwargs={"pending_chat_prompt": f"Summarize the technical procedures, safety warnings, and component requirements in {uploaded_file.name}."}
+                        )
                     with b_col2:
-                        if st.button("🧩 Inspect components in Explorer", key=f"comp_doc_{uploaded_file.name}_{key_suffix}", use_container_width=True):
-                            st.session_state["comp_doc_sel"] = uploaded_file.name
-                            st.session_state["app_mode_radio"] = "🧩 Visual & Tabular Component Explorer"
-                            st.rerun()
+                        st.button(
+                            "🧩 Inspect components in Explorer",
+                            key=f"comp_doc_{uploaded_file.name}_{key_suffix}",
+                            use_container_width=True,
+                            on_click=navigate_to_mode,
+                            args=("🧩 Visual & Tabular Component Explorer",),
+                            kwargs={"comp_doc_sel": uploaded_file.name}
+                        )
                     with b_col3:
-                        if st.button("⚖️ Compare with other SOPs", key=f"diff_doc_{uploaded_file.name}_{key_suffix}", use_container_width=True):
-                            st.session_state["app_mode_radio"] = "⚖️ SOP Revision Comparison Engine"
-                            st.rerun()
+                        st.button(
+                            "⚖️ Compare with other SOPs",
+                            key=f"diff_doc_{uploaded_file.name}_{key_suffix}",
+                            use_container_width=True,
+                            on_click=navigate_to_mode,
+                            args=("⚖️ SOP Revision Comparison Engine",)
+                        )
 
                     # Retry Component Extraction Button if needed
                     if not comp_success or doc_record.get("component_extraction_status") != "success":
@@ -1388,18 +1473,28 @@ if app_mode == "📊 Executive Dashboard & Telemetry":
         st.markdown('<div class="nav-card">', unsafe_allow_html=True)
         st.markdown("#### 💬 Technical Consultation Chatbot")
         st.markdown("Ask natural-language engineering questions regarding manufacturing, assembly, torque, alignment, and testing procedures. Grounded in authoritative SOP passages with traceable citations.")
-        if st.button("🚀 Launch Technical Chatbot", key="dash_launch_chat", type="primary", use_container_width=True):
-            st.session_state["app_mode_radio"] = "💬 Technical Consultation Chat"
-            st.rerun()
+        st.button(
+            "🚀 Launch Technical Chatbot",
+            key="dash_launch_chat",
+            type="primary",
+            use_container_width=True,
+            on_click=navigate_to_mode,
+            args=("💬 Technical Consultation Chat",)
+        )
         st.markdown('</div>', unsafe_allow_html=True)
 
     with n_row1_c2:
         st.markdown('<div class="nav-card">', unsafe_allow_html=True)
         st.markdown("#### 🧩 Visual & Tabular Component Explorer")
         st.markdown("Inspect 517 extracted physical components, major assemblies, and subsystems across 10 logical categories. Explore verified mechanical relationships, tolerances, and cross-revision technical evolution.")
-        if st.button("🧩 Open Component Explorer", key="dash_launch_comp", type="secondary", use_container_width=True):
-            st.session_state["app_mode_radio"] = "🧩 Visual & Tabular Component Explorer"
-            st.rerun()
+        st.button(
+            "🧩 Open Component Explorer",
+            key="dash_launch_comp",
+            type="secondary",
+            use_container_width=True,
+            on_click=navigate_to_mode,
+            args=("🧩 Visual & Tabular Component Explorer",)
+        )
         st.markdown('</div>', unsafe_allow_html=True)
 
     n_row2_c1, n_row2_c2, n_row2_c3 = st.columns(3)
@@ -1407,27 +1502,39 @@ if app_mode == "📊 Executive Dashboard & Telemetry":
         st.markdown('<div class="nav-card">', unsafe_allow_html=True)
         st.markdown("#### ⚖️ Revision Comparison")
         st.markdown("Audit before/after numerical tolerances, safety precautions, tooling shifts, and acceptance criteria between baseline V1 and revised V2 SOPs.")
-        if st.button("⚖️ Compare SOP Revisions", key="dash_launch_diff", use_container_width=True):
-            st.session_state["app_mode_radio"] = "⚖️ SOP Revision Comparison Engine"
-            st.rerun()
+        st.button(
+            "⚖️ Compare SOP Revisions",
+            key="dash_launch_diff",
+            use_container_width=True,
+            on_click=navigate_to_mode,
+            args=("⚖️ SOP Revision Comparison Engine",)
+        )
         st.markdown('</div>', unsafe_allow_html=True)
 
     with n_row2_c2:
         st.markdown('<div class="nav-card">', unsafe_allow_html=True)
         st.markdown("#### 🔗 Impact Analysis")
         st.markdown("Analyze how manufacturing and assembly changes propagate across coupled geometric interfaces and interconnected tank subsystems.")
-        if st.button("🔗 Track Cross Impacts", key="dash_launch_impact", use_container_width=True):
-            st.session_state["app_mode_radio"] = "🔗 Cross-Document Impact Analysis"
-            st.rerun()
+        st.button(
+            "🔗 Track Cross Impacts",
+            key="dash_launch_impact",
+            use_container_width=True,
+            on_click=navigate_to_mode,
+            args=("🔗 Cross-Document Impact Analysis",)
+        )
         st.markdown('</div>', unsafe_allow_html=True)
 
     with n_row2_c3:
         st.markdown('<div class="nav-card">', unsafe_allow_html=True)
         st.markdown("#### 📥 Ingest SOP Documents")
         st.markdown("Upload and index new technical PDFs through the transactional 7-stage ingestion workflow with automatic component extraction and FAISS indexing.")
-        if st.button("📥 Ingest New Documents", key="dash_launch_upload", use_container_width=True):
-            st.session_state["app_mode_radio"] = "📥 Ingest & Manage SOP Documents"
-            st.rerun()
+        st.button(
+            "📥 Ingest New Documents",
+            key="dash_launch_upload",
+            use_container_width=True,
+            on_click=navigate_to_mode,
+            args=("📥 Ingest & Manage SOP Documents",)
+        )
         st.markdown('</div>', unsafe_allow_html=True)
 
 elif app_mode == "💬 Technical Consultation Chat":
@@ -1476,10 +1583,14 @@ elif app_mode == "💬 Technical Consultation Chat":
                 if st.button("📖 Which SOP section describes its installation?", key="chip_sec", use_container_width=True):
                     st.session_state["pending_chat_prompt"] = f"Which SOP section and page describes the {active_comp_ctx.get('component_name')} and its installation or inspection?"
                     st.rerun()
-                if st.button("🧩 Open in Component Explorer", key="chip_explorer", use_container_width=True):
-                    st.session_state["target_nav_component"] = active_comp_ctx.get("component_name")
-                    st.session_state["app_mode_radio"] = "🧩 Visual & Tabular Component Explorer"
-                    st.rerun()
+                st.button(
+                    "🧩 Open in Component Explorer",
+                    key="chip_explorer",
+                    use_container_width=True,
+                    on_click=navigate_to_mode,
+                    args=("🧩 Visual & Tabular Component Explorer",),
+                    kwargs={"target_nav_component": active_comp_ctx.get("component_name")}
+                )
         st.divider()
 
     # Render empty conversation prompt if no messages
@@ -1512,10 +1623,14 @@ elif app_mode == "💬 Technical Consultation Chat":
                     pill_cols = st.columns(min(len(ref_comps), 4))
                     for p_idx, comp_name in enumerate(ref_comps[:4]):
                         with pill_cols[p_idx % len(pill_cols)]:
-                            if st.button(f"🔍 {comp_name}", key=f"hist_ref_comp_{msg.get('message_id', idx)}_{p_idx}", use_container_width=True):
-                                st.session_state["target_nav_component"] = comp_name
-                                st.session_state["app_mode_radio"] = "🧩 Visual & Tabular Component Explorer"
-                                st.rerun()
+                            st.button(
+                                f"🔍 {comp_name}",
+                                key=f"hist_ref_comp_{msg.get('message_id', idx)}_{p_idx}",
+                                use_container_width=True,
+                                on_click=navigate_to_mode,
+                                args=("🧩 Visual & Tabular Component Explorer",),
+                                kwargs={"target_nav_component": comp_name}
+                            )
 
             # Render compact evidence citations if available
             if citations and role == "assistant":
@@ -1526,6 +1641,10 @@ elif app_mode == "💬 Technical Consultation Chat":
     controls_container = st.container()
     chat_box_input = st.chat_input("Enter your SOP engineering inquiry...")
     user_input = pending_prompt if pending_prompt else chat_box_input
+
+    def handle_chat_stop_click():
+        st.session_state["stop_requested"] = True
+        st.session_state["is_generating"] = False
 
     if user_input and not st.session_state["is_generating"]:
         if len(messages) == 0:
@@ -1541,14 +1660,20 @@ elif app_mode == "💬 Technical Consultation Chat":
         with st.chat_message("user", avatar="🧑‍💻"):
             st.markdown(user_input)
 
+        generation_id = str(uuid.uuid4())
+        st.session_state["active_generation_id"] = generation_id
         st.session_state["is_generating"] = True
         st.session_state["stop_requested"] = False
 
         stop_col1, stop_col2 = controls_container.columns([5, 2])
         with stop_col2:
-            stop_clicked = st.button("⏹ Stop Generation", key="active_stop_btn", type="secondary", use_container_width=True)
-            if stop_clicked:
-                st.session_state["stop_requested"] = True
+            st.button(
+                "⏹ Stop Generation",
+                key="active_stop_btn",
+                type="secondary",
+                use_container_width=True,
+                on_click=handle_chat_stop_click
+            )
 
         with st.chat_message("assistant", avatar="🛡️"):
             response_placeholder = st.empty()
@@ -1557,6 +1682,8 @@ elif app_mode == "💬 Technical Consultation Chat":
             accumulator = SmoothStreamAccumulator()
             stream_citations: List[Dict[str, Any]] = []
             generation_interrupted = False
+            info: Dict[str, Any] = {}
+            clean_text = ""
 
             try:
                 token_stream, stream_citations, info = re.stream_rag_answer(
@@ -1568,7 +1695,7 @@ elif app_mode == "💬 Technical Consultation Chat":
                 )
 
                 for token in token_stream:
-                    if st.session_state.get("stop_requested", False):
+                    if st.session_state.get("stop_requested", False) or st.session_state.get("active_generation_id") != generation_id:
                         generation_interrupted = True
                         if hasattr(token_stream, "close") and callable(token_stream.close):
                             try:
@@ -1588,20 +1715,25 @@ elif app_mode == "💬 Technical Consultation Chat":
                 generation_interrupted = True
 
             finally:
+                if st.session_state.get("stop_requested", False):
+                    generation_interrupted = True
                 st.session_state["is_generating"] = False
                 st.session_state["stop_requested"] = False
                 accumulator.scroll_controller.stop()
 
-            clean_text = accumulator.get_final_text(interrupted=generation_interrupted)
-            response_placeholder.markdown(clean_text)
-
-            db.save_message(
-                conversation_id=active_cid,
-                role="assistant",
-                content=clean_text,
-                citations=stream_citations,
-                is_cancelled=generation_interrupted
-            )
+                clean_text = accumulator.get_final_text(interrupted=generation_interrupted)
+                if clean_text:
+                    response_placeholder.markdown(clean_text)
+                    try:
+                        db.save_message(
+                            conversation_id=active_cid,
+                            role="assistant",
+                            content=clean_text,
+                            citations=stream_citations,
+                            is_cancelled=generation_interrupted
+                        )
+                    except Exception as save_err:
+                        logger.error(f"Failed to persist assistant message: {save_err}")
 
             if stream_citations:
                 if info.get("is_cross_revision", False):
@@ -1618,10 +1750,14 @@ elif app_mode == "💬 Technical Consultation Chat":
                 pill_cols = st.columns(min(len(ref_comps_new), 4))
                 for p_idx, comp_name in enumerate(ref_comps_new[:4]):
                     with pill_cols[p_idx % len(pill_cols)]:
-                        if st.button(f"🔍 {comp_name}", key=f"stream_ref_comp_{p_idx}", use_container_width=True):
-                            st.session_state["target_nav_component"] = comp_name
-                            st.session_state["app_mode_radio"] = "🧩 Visual & Tabular Component Explorer"
-                            st.rerun()
+                        st.button(
+                            f"🔍 {comp_name}",
+                            key=f"stream_ref_comp_{p_idx}",
+                            use_container_width=True,
+                            on_click=navigate_to_mode,
+                            args=("🧩 Visual & Tabular Component Explorer",),
+                            kwargs={"target_nav_component": comp_name}
+                        )
 
         st.rerun()
 
@@ -2071,33 +2207,25 @@ elif app_mode == "🧩 Visual & Tabular Component Explorer":
                 # AI & Workflow Actions
                 act_col1, act_col2 = st.columns([1, 1])
                 with act_col1:
-                    if st.button("🤖 Ask AI about this component", key=f"ask_ai_{detail['component_id']}", type="primary", use_container_width=True):
-                        st.session_state["active_component_context"] = {
-                            "component_name": detail["component_name"],
-                            "entity_type": detail["entity_type"],
-                            "filename": detail["filename"],
-                            "section": detail["section"],
-                            "page_number": detail["page_number"],
-                            "associated_subsystem": detail["associated_subsystem"]
-                        }
-                        if selected_rev == "V1 (Baseline / Archival)":
-                            st.session_state["revision_preference"] = "V1 Only (Archival Baseline SOPs)"
-                        elif selected_rev == "V2 (Active / Revised)":
-                            st.session_state["revision_preference"] = "V2 Only (Revised / Active Operational SOPs)"
-                        elif selected_rev == "All Revisions":
-                            st.session_state["revision_preference"] = "All Revisions (Prioritize V2 / Latest)"
-
-                        new_conv = db.create_conversation(f"Component: {detail['component_name']}")
-                        st.session_state["current_conv_id"] = new_conv["conversation_id"]
-                        st.session_state["pending_chat_prompt"] = f"Explain the {detail['component_name']} ({detail['entity_type']}), its documented function, and its relationships based on the SOP evidence."
-                        st.session_state["app_mode_radio"] = "💬 Technical Consultation Chat"
-                        st.rerun()
+                    st.button(
+                        "🤖 Ask AI about this component",
+                        key=f"ask_ai_{detail['component_id']}",
+                        type="primary",
+                        use_container_width=True,
+                        on_click=ask_ai_component_callback,
+                        args=(detail, selected_rev)
+                    )
 
                 with act_col2:
-                    if st.button("⚖️ Compare Revisions for this SOP", key=f"cmp_sop_{detail['component_id']}", type="secondary", use_container_width=True):
-                        st.session_state["diff_sop_sel"] = selected_comp.get("logical_sop_id") or selected_comp.get("filename")
-                        st.session_state["app_mode_radio"] = "⚖️ SOP Revision Comparison Engine"
-                        st.rerun()
+                    st.button(
+                        "⚖️ Compare Revisions for this SOP",
+                        key=f"cmp_sop_{detail['component_id']}",
+                        type="secondary",
+                        use_container_width=True,
+                        on_click=navigate_to_mode,
+                        args=("⚖️ SOP Revision Comparison Engine",),
+                        kwargs={"diff_sop_sel": selected_comp.get("logical_sop_id") or selected_comp.get("filename")}
+                    )
 
                 if detail["is_uncertain"]:
                     st.warning(f"⚠️ **Uncertainty Notice**: {detail['uncertainty_reason'] or 'Marked for mandatory engineering review without inventing data.'}")
