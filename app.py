@@ -20,9 +20,10 @@ Responsibilities:
 import os
 import re as regex
 import time
+from datetime import datetime
 import uuid
 import logging
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 import streamlit as st
 import pandas as pd
 
@@ -775,6 +776,91 @@ class SmoothStreamAccumulator:
         if not clean:
             clean = "*[No response generated]*"
         return clean
+
+
+def format_message_timing_display(msg: Dict[str, Any]) -> Optional[Tuple[str, str]]:
+    """
+    Constructs the compact timing caption and tooltip help for a message.
+    
+    Format requirements:
+    - User: "Asked: 10:44:12"
+    - Completed Assistant: "Started: 10:44:13 | First token: 1.42s | Completed: 10:44:21 | Total: 8.76s"
+    - Cancelled Assistant: "Started: 10:44:13 | First token: 1.42s | Cancelled after: 3.20s" (or "Cancelled after: 0.85s")
+    - Failed Assistant: "Failed after: 2.10s"
+    
+    Returns:
+        Optional[Tuple[str, str]]: (display_caption, tooltip_text) or None if legacy message without timing.
+    """
+    timing = msg.get("timing_metadata")
+    role = msg.get("role", "user")
+
+    if not timing:
+        ts = msg.get("timestamp")
+        if ts and role == "user":
+            return f"Asked: {ts}", "Historical message (timestamp only)"
+        elif ts and role == "assistant":
+            return f"Recorded: {ts}", "Historical message (timestamp only)"
+        return None
+
+    date_str = timing.get("date", "")
+    tz_str = timing.get("timezone", "")
+    tooltip = f"Date: {date_str} ({tz_str})" if date_str else "Recorded in local timezone"
+
+    if role == "user":
+        asked = timing.get("display_asked") or msg.get("timestamp", "")
+        return f"Asked: {asked}", tooltip
+
+    status = timing.get("completion_status", "completed")
+    started = timing.get("display_started")
+    completed = timing.get("display_completed")
+    ftl = timing.get("first_token_latency")
+    total = timing.get("total_duration")
+    tokens = timing.get("token_count")
+
+    parts = []
+    if status == "completed":
+        if started:
+            parts.append(f"Started: {started}")
+        if ftl is not None:
+            parts.append(f"First token: {ftl:.2f}s")
+        elif not started:
+            parts.append("First token: N/A (no response token received)")
+        if completed:
+            parts.append(f"Completed: {completed}")
+        if total is not None:
+            parts.append(f"Total: {total:.2f}s")
+    elif status == "cancelled":
+        if started:
+            parts.append(f"Started: {started}")
+        if ftl is not None:
+            parts.append(f"First token: {ftl:.2f}s")
+        dur_str = f"{total:.2f}s" if total is not None else "N/A"
+        parts.append(f"Cancelled after: {dur_str}")
+    elif status == "failed":
+        if started:
+            parts.append(f"Started: {started}")
+        if ftl is not None:
+            parts.append(f"First token: {ftl:.2f}s")
+        dur_str = f"{total:.2f}s" if total is not None else "N/A"
+        parts.append(f"Failed after: {dur_str}")
+    else:
+        if started:
+            parts.append(f"Started: {started}")
+        if completed:
+            parts.append(f"Completed: {completed}")
+        if total is not None:
+            parts.append(f"Total: {total:.2f}s")
+
+    caption = " | ".join(parts) if parts else (f"Recorded: {msg.get('timestamp', '')}" if msg.get("timestamp") else "")
+
+    tooltip_parts = [tooltip]
+    if tokens is not None and tokens > 0:
+        tooltip_parts.append(f"Generated tokens: ~{tokens}")
+    if total is not None:
+        tooltip_parts.append("Note: Total response time includes retrieval and inference; not pure model inference time.")
+    full_tooltip = " | ".join(tooltip_parts)
+
+    return caption, full_tooltip
 
 
 # ============================================================================
@@ -1636,6 +1722,11 @@ elif app_mode == "💬 Technical Consultation Chat":
             if citations and role == "assistant":
                 render_compact_evidence_sources(citations)
 
+            # Render compact timing caption and tooltip if available
+            timing_info = format_message_timing_display(msg)
+            if timing_info and timing_info[0]:
+                st.caption(f"⏱️ {timing_info[0]}", help=timing_info[1])
+
     # --- Chat Input & Streaming Generation ---
     pending_prompt = st.session_state.pop("pending_chat_prompt", None)
     controls_container = st.container()
@@ -1647,6 +1738,16 @@ elif app_mode == "💬 Technical Consultation Chat":
         st.session_state["is_generating"] = False
 
     if user_input and not st.session_state["is_generating"]:
+        submission_dt = datetime.now().astimezone()
+        submission_perf = time.perf_counter()
+        user_timing = {
+            "submitted_at": submission_dt.isoformat(),
+            "display_asked": submission_dt.strftime("%H:%M:%S"),
+            "date": submission_dt.strftime("%Y-%m-%d"),
+            "timezone": submission_dt.tzname() or "Local",
+            "completion_status": "submitted"
+        }
+
         if len(messages) == 0:
             clean_title = (user_input[:28] + "...") if len(user_input) > 28 else user_input
             db.update_conversation_title(active_cid, clean_title)
@@ -1654,11 +1755,18 @@ elif app_mode == "💬 Technical Consultation Chat":
         db.save_message(
             conversation_id=active_cid,
             role="user",
-            content=user_input
+            content=user_input,
+            timing_metadata=user_timing
         )
 
         with st.chat_message("user", avatar="🧑‍💻"):
             st.markdown(user_input)
+            user_timing_display = format_message_timing_display({
+                "role": "user",
+                "timing_metadata": user_timing
+            })
+            if user_timing_display and user_timing_display[0]:
+                st.caption(f"⏱️ {user_timing_display[0]}", help=user_timing_display[1])
 
         generation_id = str(uuid.uuid4())
         st.session_state["active_generation_id"] = generation_id
@@ -1685,6 +1793,14 @@ elif app_mode == "💬 Technical Consultation Chat":
             info: Dict[str, Any] = {}
             clean_text = ""
 
+            # Performance timing metrics
+            first_token_perf: Optional[float] = None
+            first_token_dt: Optional[datetime] = None
+            first_token_latency: Optional[float] = None
+            token_count: int = 0
+            stream_end_perf: Optional[float] = None
+            generation_status = "completed"
+
             try:
                 token_stream, stream_citations, info = re.stream_rag_answer(
                     question=user_input,
@@ -1697,6 +1813,7 @@ elif app_mode == "💬 Technical Consultation Chat":
                 for token in token_stream:
                     if st.session_state.get("stop_requested", False) or st.session_state.get("active_generation_id") != generation_id:
                         generation_interrupted = True
+                        generation_status = "cancelled"
                         if hasattr(token_stream, "close") and callable(token_stream.close):
                             try:
                                 token_stream.close()
@@ -1704,12 +1821,24 @@ elif app_mode == "💬 Technical Consultation Chat":
                                 pass
                         break
 
+                    # Detect and record first non-empty token arrival
+                    if first_token_perf is None and token and token.strip() != "":
+                        first_token_perf = time.perf_counter()
+                        first_token_dt = datetime.now().astimezone()
+                        first_token_latency = round(first_token_perf - submission_perf, 2)
+
+                    token_count += 1
+
                     if accumulator.add_token(token):
                         display_html = accumulator.get_display_html(is_active=True)
                         response_placeholder.markdown(display_html, unsafe_allow_html=True)
 
+                stream_end_perf = time.perf_counter()
+
             except Exception as e:
+                logger.error(f"Generation error: {e}", exc_info=True)
                 st.error(f"Generation error: {e}")
+                generation_status = "failed"
                 if not accumulator.full_response:
                     accumulator.full_response = f"*[Error during inference: {str(e)}]*"
                 generation_interrupted = True
@@ -1717,9 +1846,39 @@ elif app_mode == "💬 Technical Consultation Chat":
             finally:
                 if st.session_state.get("stop_requested", False):
                     generation_interrupted = True
+                    generation_status = "cancelled"
                 st.session_state["is_generating"] = False
                 st.session_state["stop_requested"] = False
                 accumulator.scroll_controller.stop()
+
+                completion_perf = stream_end_perf or time.perf_counter()
+                total_duration = round(completion_perf - submission_perf, 2)
+                completion_dt = datetime.now().astimezone()
+
+                # Build assistant timing dictionary
+                started_at_str = first_token_dt.isoformat() if first_token_dt else None
+                display_started = first_token_dt.strftime("%H:%M:%S") if first_token_dt else None
+
+                # For cancelled or failed generations, display_completed is None
+                if generation_status == "completed":
+                    completed_at_str = completion_dt.isoformat()
+                    display_completed = completion_dt.strftime("%H:%M:%S")
+                else:
+                    completed_at_str = None
+                    display_completed = None
+
+                assistant_timing = {
+                    "started_at": started_at_str,
+                    "first_token_latency": first_token_latency,
+                    "completed_at": completed_at_str,
+                    "total_duration": total_duration,
+                    "completion_status": generation_status,
+                    "token_count": token_count,
+                    "display_started": display_started,
+                    "display_completed": display_completed,
+                    "date": (first_token_dt or completion_dt).strftime("%Y-%m-%d"),
+                    "timezone": (first_token_dt or completion_dt).tzname() or "Local"
+                }
 
                 clean_text = accumulator.get_final_text(interrupted=generation_interrupted)
                 if clean_text:
@@ -1730,7 +1889,8 @@ elif app_mode == "💬 Technical Consultation Chat":
                             role="assistant",
                             content=clean_text,
                             citations=stream_citations,
-                            is_cancelled=generation_interrupted
+                            is_cancelled=generation_interrupted,
+                            timing_metadata=assistant_timing
                         )
                     except Exception as save_err:
                         logger.error(f"Failed to persist assistant message: {save_err}")
@@ -1758,6 +1918,14 @@ elif app_mode == "💬 Technical Consultation Chat":
                             args=("🧩 Visual & Tabular Component Explorer",),
                             kwargs={"target_nav_component": comp_name}
                         )
+
+            # Render timing display for this newly generated response
+            timing_display = format_message_timing_display({
+                "role": "assistant",
+                "timing_metadata": assistant_timing
+            })
+            if timing_display and timing_display[0]:
+                st.caption(f"⏱️ {timing_display[0]}", help=timing_display[1])
 
         st.rerun()
 

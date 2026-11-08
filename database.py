@@ -104,9 +104,17 @@ def init_database(db_path: str = DEFAULT_DB_PATH) -> None:
                 is_cancelled INTEGER NOT NULL DEFAULT 0,
                 timestamp TEXT NOT NULL,
                 sequence_number INTEGER NOT NULL,
+                timing_metadata TEXT NOT NULL DEFAULT '{}',
                 FOREIGN KEY (conversation_id) REFERENCES conversations(conversation_id) ON DELETE CASCADE
             );
         """)
+
+        # Migration: Ensure timing_metadata column exists on legacy databases
+        cursor.execute("PRAGMA table_info(messages);")
+        columns_info = cursor.fetchall()
+        existing_cols = [c[1] if isinstance(c, (tuple, list)) else c["name"] for c in columns_info]
+        if "timing_metadata" not in existing_cols:
+            cursor.execute("ALTER TABLE messages ADD COLUMN timing_metadata TEXT NOT NULL DEFAULT '{}';")
 
         # 3. Impact Reviews Table (Phase 8 Human Review Workflow)
         cursor.execute("""
@@ -338,6 +346,7 @@ def save_message(
     is_cancelled: bool = False,
     msg_id: Optional[str] = None,
     timestamp: Optional[str] = None,
+    timing_metadata: Optional[Dict[str, Any]] = None,
     db_path: str = DEFAULT_DB_PATH
 ) -> Dict[str, Any]:
     """
@@ -352,6 +361,7 @@ def save_message(
         is_cancelled: Flag indicating user pressed Stop during generation.
         msg_id: Optional custom message ID; generates UUID4 if None.
         timestamp: Optional formatted timestamp; defaults to current time.
+        timing_metadata: Optional dictionary of performance timestamps, latencies, and statuses.
         db_path: Path to database.
         
     Returns:
@@ -377,6 +387,8 @@ def save_message(
     ts = str(timestamp).strip() if timestamp else datetime.now().strftime("%H:%M:%S")
     now_iso = datetime.now().isoformat()
     cits_json = json.dumps(citations or [])
+    timing_dict = timing_metadata or {}
+    timing_json = json.dumps(timing_dict)
 
     with get_db(db_path) as conn:
         cursor = conn.cursor()
@@ -397,12 +409,12 @@ def save_message(
             """
             INSERT INTO messages (
                 message_id, conversation_id, role, content,
-                citations, is_cancelled, timestamp, sequence_number
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+                citations, is_cancelled, timestamp, sequence_number, timing_metadata
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
             """,
             (
                 m_id, clean_cid, clean_role, content or "",
-                cits_json, 1 if is_cancelled else 0, ts, next_seq
+                cits_json, 1 if is_cancelled else 0, ts, next_seq, timing_json
             )
         )
 
@@ -421,7 +433,8 @@ def save_message(
         "citations": citations or [],
         "is_cancelled": bool(is_cancelled),
         "timestamp": ts,
-        "sequence_number": next_seq
+        "sequence_number": next_seq,
+        "timing_metadata": timing_dict
     }
 
 
@@ -448,7 +461,7 @@ def get_conversation_messages(
         cursor.execute(
             """
             SELECT message_id, conversation_id, role, content,
-                   citations, is_cancelled, timestamp, sequence_number
+                   citations, is_cancelled, timestamp, sequence_number, timing_metadata
             FROM messages
             WHERE conversation_id = ?
             ORDER BY sequence_number ASC;
@@ -465,6 +478,12 @@ def get_conversation_messages(
         except Exception:
             cits = []
 
+        timing_raw = r["timing_metadata"] if "timing_metadata" in r.keys() else None
+        try:
+            timing = json.loads(timing_raw) if timing_raw else {}
+        except Exception:
+            timing = {}
+
         messages.append({
             "message_id": r["message_id"],
             "conversation_id": r["conversation_id"],
@@ -473,7 +492,8 @@ def get_conversation_messages(
             "citations": cits,
             "is_cancelled": bool(r["is_cancelled"]),
             "timestamp": r["timestamp"],
-            "sequence_number": r["sequence_number"]
+            "sequence_number": r["sequence_number"],
+            "timing_metadata": timing
         })
 
     return messages

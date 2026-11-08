@@ -6,7 +6,7 @@
 
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg)](file:///d:/Parikshith/SOP_Assistant)
 [![Offline Security](https://img.shields.io/badge/Air--Gap-100%25%20Offline-blue.svg)](file:///d:/Parikshith/SOP_Assistant/docs/SYSTEM_ARCHITECTURE.md)
-[![Tests](https://img.shields.io/badge/Regression%20Tests-108%2F108%20PASS-brightgreen.svg)](file:///d:/Parikshith/SOP_Assistant/docs/TESTING_AND_VALIDATION.md)
+[![Tests](https://img.shields.io/badge/Regression%20Tests-138%2F138%20PASS-brightgreen.svg)](file:///d:/Parikshith/SOP_Assistant/docs/TESTING_AND_VALIDATION.md)
 [![FAISS Vectors](https://img.shields.io/badge/FAISS%20Vectors-150-informational.svg)](file:///d:/Parikshith/SOP_Assistant/data/faiss_index/sop.index)
 [![Components](https://img.shields.io/badge/Structured%20Components-517-blueviolet.svg)](file:///d:/Parikshith/SOP_Assistant/data/faiss_index/components_metadata.json)
 
@@ -132,7 +132,7 @@ pip install -r requirements.txt
 ```powershell
 python tests/run_all_regression_tests.py
 ```
-*Expected: 108 / 108 tests PASS (100% OK).*
+*Expected: 138 / 138 tests PASS (100% OK).*
 
 #### 6. Start the Application
 ```powershell
@@ -162,6 +162,14 @@ Navigate to **"💬 Technical Consultation Chat"**.
   7. `REVISION_COMPARISON` (*"What changed in hull welding in V2?"* -> delta comparison)
   8. `GENERAL_CONVERSATION` (*"Hi"* -> instant conversational greeting with zero vector retrieval)
 - **Immediate Generation Cancellation**: Clicking **"⏹ Stop Generation"** aborts inference immediately, preserves partial output with an interrupted tag, persists the conversation state, and allows immediate submission of the next inquiry without page refresh.
+- **High-Precision Chat Timestamps & Response Performance Telemetry**:
+  - **User Inquiries**: Displays exact submission timestamp (`⏱️ Asked: HH:MM:SS`) with hover tooltip revealing full calendar date and system timezone.
+  - **Assistant Responses**: Displays high-precision execution timings measured with `time.perf_counter()`:
+    - *Completed*: `⏱️ Started: HH:MM:SS | First token: X.XXs | Completed: HH:MM:SS | Total: X.XXs`
+    - *Cancelled*: `⏱️ Started: HH:MM:SS | First token: X.XXs | Cancelled after: X.XXs` (or `Cancelled after: X.XXs` if stopped before first token)
+    - *Failed*: `⏱️ Failed after: X.XXs`
+  - **First-Token Detection**: Accurately measures first-token latency on the first non-empty token (`token.strip() != ""`), capturing cold start, vector retrieval, and initial prompt evaluation time without UI render skew.
+  - **Persistent SQLite Audit**: Timing metadata is persisted in `messages.timing_metadata` JSON column, surviving restarts and page reloads while maintaining 100% backward compatibility with legacy message histories.
 - Click **"Evidence Sources & Citations"** to inspect exact source passages, page numbers, and similarity scores.
 - Click any related component chip at the bottom of the answer to jump directly into the Component Explorer.
 
