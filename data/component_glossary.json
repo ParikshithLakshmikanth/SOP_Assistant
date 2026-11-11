@@ -232,7 +232,7 @@
       "Traversed in azimuth by the dual-pinion anti-backlash drive."
     ],
     "sop_filename": "HVF_SOP_2_Turret_Integration.pdf",
-    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "revision": "Rev 3.8 (Baseline) / Rev 4.5 (Revised)",
     "section": "SECTION 1.0 & SECTION 2.0",
     "page_number": 1,
     "evidence_status": "DIRECTLY_STATED",
@@ -261,7 +261,7 @@
       "Seats the bearing raceway that supports the rotating turret basket."
     ],
     "sop_filename": "HVF_SOP_2_Turret_Integration.pdf",
-    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "revision": "Rev 3.8 (Baseline) / Rev 4.5 (Revised)",
     "section": "SECTION 1.1 & SECTION 2.1",
     "page_number": 2,
     "evidence_status": "DIRECTLY_STATED",
@@ -289,7 +289,7 @@
       "Secured by the ballistic retention ring with calibrated torque-angle fasteners."
     ],
     "sop_filename": "HVF_SOP_2_Turret_Integration.pdf",
-    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "revision": "Rev 3.8 (Baseline) / Rev 4.5 (Revised)",
     "section": "SECTION 1.0 & SECTION 2.2",
     "page_number": 2,
     "evidence_status": "DIRECTLY_STATED",
@@ -306,7 +306,7 @@
     "entity_type": "ASSEMBLY",
     "what_it_is": "A heavy-duty precision turret bearing assembly featuring silicon nitride (Si3N4) ceramic rollers alternating between hardened steel raceways.",
     "what_it_does": "Supports the 18-tonne rotating turret basket on the hull plinth, provides high-rigidity rotational motion with minimal friction, prevents electrical microwelding, and resists brinelling under extreme gun recoil shock.",
-    "where_it_fits": "Turret Integration System (introduced in Rev 5.0 V2 to replace the Rev 4.2 four-point steel ball bearing).",
+    "where_it_fits": "Turret Integration System (introduced in Rev 4.5 V2 to replace the Rev 3.8 four-point steel ball bearing).",
     "related_parts": [
       "Turret Base Ring",
       "Cross-Roller Bearing Raceway",
@@ -318,7 +318,7 @@
       "Ceramic rollers feature sphericity grade tolerance within 0.0005 mm."
     ],
     "sop_filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
-    "revision": "Rev 5.0 (Revised / Active)",
+    "revision": "Rev 4.5 (Revised / Active)",
     "section": "SECTION 2.1",
     "page_number": 2,
     "evidence_status": "DIRECTLY_STATED",
@@ -347,7 +347,7 @@
       "Directs rotational power through the crankshaft coupling into the transmission gearbox."
     ],
     "sop_filename": "HVF_SOP_3_Engine_Alignment.pdf",
-    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "revision": "Rev 5.1 (Baseline) / Rev 6.0 (Revised)",
     "section": "SECTION 1.0 & SECTION 2.0",
     "page_number": 1,
     "evidence_status": "DIRECTLY_STATED",
@@ -377,7 +377,7 @@
       "Secured to the hull floor by four calibrated vibration damping mounts."
     ],
     "sop_filename": "HVF_SOP_3_Engine_Alignment.pdf",
-    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "revision": "Rev 5.1 (Baseline) / Rev 6.0 (Revised)",
     "section": "SECTION 1.0 & SECTION 2.1",
     "page_number": 1,
     "evidence_status": "DIRECTLY_STATED",
@@ -407,7 +407,7 @@
       "Preloaded at an initial preset angle of 32\u00b0 \u00b1 0.5\u00b0 before road wheel fitment."
     ],
     "sop_filename": "HVF_SOP_4_Torsion_Suspension.pdf",
-    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "revision": "Rev 4.0 (Baseline) / Rev 5.2 (Revised)",
     "section": "SECTION 1.1 & SECTION 2.1",
     "page_number": 1,
     "evidence_status": "DIRECTLY_STATED",
@@ -425,7 +425,7 @@
     "entity_type": "PHYSICAL_COMPONENT",
     "what_it_is": "An advanced fluid-filled elastomeric vibration isolation mount with electronically or hydraulically tuned fluid damping passages.",
     "what_it_does": "Isolates the vehicle hull and transmission from engine low-frequency torque pulses and attenuates high-frequency vibration during high-speed tactical cross-country operations.",
-    "where_it_fits": "V12 Powerpack Mounting Interface / Engine Bay Hull Pedestals (introduced in Rev 5.0 V2).",
+    "where_it_fits": "V12 Powerpack Mounting Interface / Engine Bay Hull Pedestals (introduced in Rev 6.0 V2).",
     "related_parts": [
       "V12 Powerpack Engine",
       "Crankshaft-to-Transmission Drive Shaft",
@@ -436,7 +436,7 @@
       "Maintains cold radial offset within 0.08 mm under thermal expansion."
     ],
     "sop_filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
-    "revision": "Rev 5.0 (Revised / Active)",
+    "revision": "Rev 6.0 (Revised / Active)",
     "section": "SECTION 1.2 & SECTION 2.1",
     "page_number": 2,
     "evidence_status": "DIRECTLY_STATED",
@@ -468,7 +468,7 @@
       "Static upper track catenary sag is calibrated to 35\u201345 mm in V1 and 25\u201335 mm in V2."
     ],
     "sop_filename": "HVF_SOP_4_Torsion_Suspension.pdf",
-    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "revision": "Rev 4.0 (Baseline) / Rev 5.2 (Revised)",
     "section": "SECTION 4.0 & SECTION 5.0",
     "page_number": 4,
     "evidence_status": "DIRECTLY_STATED",
@@ -498,7 +498,7 @@
       "Damped at extreme wheel stations (stations 1, 2, and 6) by heavy-duty hydraulic or magnetorheological rotary dampers."
     ],
     "sop_filename": "HVF_SOP_4_Torsion_Suspension.pdf",
-    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "revision": "Rev 4.0 (Baseline) / Rev 5.2 (Revised)",
     "section": "SECTION 1.0 & SECTION 2.0",
     "page_number": 1,
     "evidence_status": "DIRECTLY_STATED",
@@ -526,7 +526,7 @@
       "Surface raceway hardness is verified at 58\u201362 HRC."
     ],
     "sop_filename": "HVF_SOP_2_Turret_Integration.pdf",
-    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "revision": "Rev 3.8 (Baseline) / Rev 4.5 (Revised)",
     "section": "SECTION 1.2",
     "page_number": 2,
     "evidence_status": "DIRECTLY_STATED",
@@ -554,7 +554,7 @@
       "Inspected for sphericity within 0.0005 mm."
     ],
     "sop_filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
-    "revision": "Rev 5.0 (Revised / Active)",
+    "revision": "Rev 4.5 (Revised / Active)",
     "section": "SECTION 2.1",
     "page_number": 2,
     "evidence_status": "DIRECTLY_STATED",
@@ -582,7 +582,7 @@
       "Sealed by a labyrinth seal (V1) or triple-lip cassette seal (V2) to exclude water and mud."
     ],
     "sop_filename": "HVF_SOP_4_Torsion_Suspension.pdf",
-    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "revision": "Rev 4.0 (Baseline) / Rev 5.2 (Revised)",
     "section": "SECTION 1.2",
     "page_number": 2,
     "evidence_status": "DIRECTLY_STATED",
@@ -614,7 +614,7 @@
       "Track runs under the suspension road wheels connected to the torsion bar stations."
     ],
     "sop_filename": "HVF_SOP_4_Torsion_Suspension.pdf",
-    "revision": "Rev 4.2 / Rev 5.0",
+    "revision": "Rev 4.0 (Baseline) / Rev 5.2 (Revised)",
     "section": "SECTION 1.0 & SECTION 2.0",
     "page_number": 3,
     "evidence_status": "DIRECTLY_STATED",
@@ -644,7 +644,7 @@
       "Precision shim packs under engine hydromounts adjust vertical and lateral alignment."
     ],
     "sop_filename": "HVF_SOP_3_Engine_Alignment.pdf",
-    "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+    "revision": "Rev 5.1 (Baseline) / Rev 6.0 (Revised)",
     "section": "SECTION 2.0, SECTION 3.0 & SECTION 4.0",
     "page_number": 2,
     "evidence_status": "DIRECTLY_STATED",

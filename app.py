@@ -29,6 +29,7 @@ import pandas as pd
 
 # Import core backend modules
 import rag_engine as re
+import rag_evaluator as eval_mod
 import document_processor as dp
 import database as db
 import sop_analyzer as sa
@@ -861,6 +862,187 @@ def format_message_timing_display(msg: Dict[str, Any]) -> Optional[Tuple[str, st
     full_tooltip = " | ".join(tooltip_parts)
 
     return caption, full_tooltip
+
+
+def format_assessment_summary(assessment: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Formats persisted or live RAG evaluation metadata into UI-ready summary fields.
+    Handles historical unassessed messages, unavailable evaluations, skipped runs,
+    and full evidence-support scores safely.
+    """
+    if not assessment:
+        return {
+            "state": "historical",
+            "expander_title": "Answer Quality Assessment",
+            "status_text": "Not assessed — historical response.",
+            "warning_label": "NOT ASSESSED",
+            "overall_score": None,
+            "quality_category": "NOT ASSESSED",
+        }
+
+    status = assessment.get("assessment_status", "completed")
+    if status == "unavailable" or not assessment.get("evaluation_succeeded", True):
+        return {
+            "state": "unavailable",
+            "expander_title": "Answer Quality Assessment",
+            "status_text": assessment.get("display_message") or "Answer quality assessment unavailable.",
+            "warning_label": assessment.get("warning_label") or "ASSESSMENT UNAVAILABLE",
+            "overall_score": None,
+            "quality_category": "NOT ASSESSED",
+        }
+
+    if status == "skipped" or assessment.get("assessment_skipped"):
+        return {
+            "state": "skipped",
+            "expander_title": "Answer Quality Assessment",
+            "status_text": assessment.get("skip_reason") or "Assessment skipped.",
+            "warning_label": assessment.get("warning_label") or "NOT ASSESSED",
+            "overall_score": None,
+            "quality_category": "NOT ASSESSED",
+        }
+
+    overall = assessment.get("overall_score")
+    cat = assessment.get("quality_category") or eval_mod.get_quality_category(overall)
+    warn = assessment.get("warning_label") or "PARTIAL EVIDENCE"
+    score_str = f"{overall:.1f}/100" if overall is not None else "NOT ASSESSED"
+
+    return {
+        "state": "completed",
+        "expander_title": f"Answer Quality Assessment — {score_str} ({warn})",
+        "status_text": f"{score_str} — {cat}",
+        "warning_label": warn,
+        "overall_score": overall,
+        "quality_category": cat,
+    }
+
+
+def render_answer_quality_assessment(assessment: Optional[Dict[str, Any]], key_prefix: str = "hist") -> None:
+    """
+    Renders the compact expandable 'Answer Quality Assessment' panel below
+    an assistant response, including metric breakdown, critical safety warnings,
+    evaluation status/duration, and claim-level evidence inspection.
+    """
+    summary = format_assessment_summary(assessment)
+    state = summary["state"]
+
+    # Requirement: Title is 'Answer Quality Assessment'
+    with st.expander(summary["expander_title"], expanded=False):
+        if state == "historical":
+            st.info("Not assessed — historical response.")
+            return
+
+        if state == "unavailable":
+            st.warning("Answer quality assessment unavailable.")
+            if assessment and assessment.get("error_message"):
+                st.caption(f"Details: {assessment.get('error_message')}")
+            st.caption(
+                f"Evaluation Status: Failed | Model: {assessment.get('evaluator_model', 'N/A')} | "
+                f"Evaluation Duration: {assessment.get('evaluation_duration_sec', 0.0):.2f}s"
+            )
+            return
+
+        if state == "skipped":
+            st.caption(f"ℹ️ {summary['status_text']}")
+            st.caption(
+                f"Evaluation Status: Skipped | Evaluation Duration: {assessment.get('evaluation_duration_sec', 0.0):.2f}s"
+            )
+            return
+
+        warn_label = summary["warning_label"]
+        overall = summary["overall_score"]
+        cat = summary["quality_category"]
+        score_disp = f"{overall:.1f} / 100" if overall is not None else "NOT ASSESSED"
+
+        if warn_label in {"CONTRADICTORY EVIDENCE", "UNSUPPORTED CLAIMS DETECTED"}:
+            st.error(f"**{warn_label}** | Overall Answer Quality Score: **{score_disp}** ({cat})")
+        elif warn_label in {"INSUFFICIENT EVIDENCE", "PARTIAL EVIDENCE"}:
+            st.warning(f"**{warn_label}** | Overall Answer Quality Score: **{score_disp}** ({cat})")
+        else:
+            st.success(f"**{warn_label}** | Overall Answer Quality Score: **{score_disp}** ({cat})")
+
+        st.caption(
+            f"⚠️ *Automated estimate ({assessment.get('disclaimer', 'not independently verified truth')}).*"
+        )
+
+        # Critical Warnings & Missing Evidence
+        crit_warnings = assessment.get("critical_warnings") or []
+        if crit_warnings:
+            st.markdown("**Critical Technical & Citation Warnings:**")
+            for cw in crit_warnings:
+                st.markdown(f"- 🚨 {cw}")
+
+        missing_ev = assessment.get("missing_evidence") or []
+        if missing_ev:
+            st.markdown("**Missing SOP Evidence Identified:**")
+            for me in missing_ev:
+                st.markdown(f"- ❓ {me}")
+
+        # 5 Quality Metrics
+        metrics = assessment.get("metrics") or {}
+        metric_labels = [
+            ("evidence_support", "Evidence Support (40%)"),
+            ("answer_relevance", "Answer Relevance (25%)"),
+            ("completeness", "Completeness (15%)"),
+            ("citation_coverage", "Citation Coverage (10%)"),
+            ("retrieval_quality", "Retrieval Quality (10%)"),
+        ]
+        m_cols = st.columns(5)
+        for idx_m, (m_key, m_title) in enumerate(metric_labels):
+            m_data = metrics.get(m_key, {})
+            m_val = m_data.get("score")
+            with m_cols[idx_m]:
+                st.metric(m_title, f"{m_val:.0f}/100" if m_val is not None else "NOT ASSESSED")
+
+        for m_key, m_title in metric_labels:
+            m_data = metrics.get(m_key, {})
+            m_val = m_data.get("score")
+            m_just = m_data.get("justification", "No justification recorded.")
+            val_txt = f"{m_val:.1f}/100" if m_val is not None else "NOT ASSESSED"
+            st.caption(f"**{m_title}** ({val_txt}): {m_just}")
+
+        # Evaluation metadata
+        eval_dur = assessment.get("evaluation_duration_sec", 0.0)
+        eval_model = assessment.get("evaluator_model", "N/A")
+        st.caption(
+            f"Evaluation Status: Completed | Evaluator Model: `{eval_model}` | Evaluation Duration: {eval_dur:.2f}s"
+        )
+
+        if assessment.get("recommendation"):
+            st.info(f"**Verification Guidance:** {assessment.get('recommendation')}")
+
+        # Claim-Level Evidence Verification Inspection
+        claims = assessment.get("claims") or []
+        if claims:
+            st.markdown("---")
+            st.markdown(f"**Claim-Level Evidence Inspection ({len(claims)} factual claims):**")
+            status_icons = {
+                "SUPPORTED": "✅",
+                "PARTIALLY_SUPPORTED": "🔶",
+                "UNSUPPORTED": "⚠️",
+                "CONTRADICTED": "❌",
+                "INFERRED": "🔍",
+                "GENERAL_CONTEXT": "ℹ️",
+            }
+            for c_idx, cl in enumerate(claims, 1):
+                c_stat = cl.get("support_status", "UNSUPPORTED")
+                icon = status_icons.get(c_stat, "•")
+                ev_cls = cl.get("evidence_classification", "UNVERIFIED")
+                crit_tag = f" | 🚨 CRITICAL ({cl.get('critical_category')})" if cl.get("is_critical_technical_claim") and c_stat in {"UNSUPPORTED", "CONTRADICTED"} else ""
+                src_fname = cl.get("source_filename")
+                src_rev = cl.get("revision")
+                src_sec = cl.get("section")
+                src_pg = cl.get("page")
+                cit_line = (
+                    f"`{src_fname}` | {src_rev} | {src_sec} | Page {src_pg}"
+                    if src_fname
+                    else "No matching SOP citation"
+                )
+                st.markdown(
+                    f"{c_idx}. {icon} **[{c_stat}]** *(Class: {ev_cls}{crit_tag})*  \n"
+                    f"   **Claim:** {cl.get('claim_text', '')}  \n"
+                    f"   **Citation:** {cit_line}  \n"
+                    f"   **Assessment Reason:** {cl.get('reason', '')}"
+                )
 
 
 # ============================================================================
@@ -1727,6 +1909,13 @@ elif app_mode == "💬 Technical Consultation Chat":
             if timing_info and timing_info[0]:
                 st.caption(f"⏱️ {timing_info[0]}", help=timing_info[1])
 
+            # Render expandable Answer Quality Assessment for every assistant response
+            if role == "assistant":
+                render_answer_quality_assessment(
+                    msg.get("assessment_metadata"),
+                    key_prefix=f"hist_{msg.get('message_id', idx)}"
+                )
+
     # --- Chat Input & Streaming Generation ---
     pending_prompt = st.session_state.pop("pending_chat_prompt", None)
     controls_container = st.container()
@@ -1881,10 +2070,11 @@ elif app_mode == "💬 Technical Consultation Chat":
                 }
 
                 clean_text = accumulator.get_final_text(interrupted=generation_interrupted)
+                saved_msg_record = None
                 if clean_text:
                     response_placeholder.markdown(clean_text)
                     try:
-                        db.save_message(
+                        saved_msg_record = db.save_message(
                             conversation_id=active_cid,
                             role="assistant",
                             content=clean_text,
@@ -1926,6 +2116,42 @@ elif app_mode == "💬 Technical Consultation Chat":
             })
             if timing_display and timing_display[0]:
                 st.caption(f"⏱️ {timing_display[0]}", help=timing_display[1])
+
+            # Run non-destructive Answer Quality Assessment below the visible answer
+            eval_info = dict(info) if isinstance(info, dict) else {}
+            eval_info["is_cancelled"] = generation_interrupted
+            assessment_result = None
+            with st.spinner("Assessing answer against retrieved SOP evidence..."):
+                try:
+                    assessment_result = eval_mod.evaluate_rag_answer(
+                        question=user_input,
+                        answer=clean_text,
+                        citations=stream_citations,
+                        info=eval_info,
+                        use_llm=(generation_status == "completed" and not bool(eval_info.get("glossary_match"))),
+                        llm_timeout=15.0
+                    )
+                except Exception as eval_exc:
+                    logger.warning(f"Answer quality assessment failed cleanly: {eval_exc}")
+                    assessment_result = {
+                        "assessment_version": eval_mod.ASSESSMENT_VERSION,
+                        "evaluator_model": eval_mod.DEFAULT_EVAL_MODEL,
+                        "assessment_status": "unavailable",
+                        "evaluation_succeeded": False,
+                        "assessment_skipped": False,
+                        "display_message": "Answer quality assessment unavailable.",
+                        "error_message": str(eval_exc),
+                        "warning_label": "ASSESSMENT UNAVAILABLE",
+                        "evaluation_duration_sec": 0.0,
+                    }
+
+            if saved_msg_record and saved_msg_record.get("message_id") and assessment_result:
+                try:
+                    db.update_message_assessment(saved_msg_record["message_id"], assessment_result)
+                except Exception as persist_err:
+                    logger.error(f"Failed to persist answer assessment: {persist_err}")
+
+            render_answer_quality_assessment(assessment_result, key_prefix="stream_latest")
 
         st.rerun()
 

@@ -2,7 +2,7 @@
 **Standard Operating Procedure Technical Reference**  
 **Classification:** Defense Engineering Reference  
 **Corpus Source:** HVF SOP 1 (Hull Welding), SOP 2 (Turret Integration), SOP 3 (Engine Alignment), SOP 4 (Torsion Suspension), SOP 5 (Main Gun Calibration)  
-**Revision Scope:** Rev 4.2 (Baseline V1) and Rev 5.0 (Revised V2)
+**Revision Scope:** SOP 1 (Rev 4.2 / Rev 5.0), SOP 2 (Rev 3.8 / Rev 4.5), SOP 3 (Rev 5.1 / Rev 6.0), SOP 4 (Rev 4.0 / Rev 5.2), SOP 5 (Rev 4.6 / Rev 5.4)
 
 ---
 
@@ -93,7 +93,7 @@ This glossary provides authoritative, source-grounded definitions for physical c
 - **Aliases:** `ceramic-hybrid bearing`, `ceramic hybrid bearing`, `ceramic bearing`
 - **What it is:** A heavy-duty precision turret bearing assembly featuring silicon nitride (Si3N4) ceramic rollers alternating between hardened steel raceways.
 - **What it does:** Supports the 18-tonne rotating turret basket on the hull plinth, provides high-rigidity rotational motion with minimal friction, prevents electrical microwelding, and resists brinelling under extreme gun recoil shock.
-- **Where it fits:** Turret Integration System (introduced in Rev 5.0 V2 to replace the Rev 4.2 four-point steel ball bearing).
+- **Where it fits:** Turret Integration System (introduced in Rev 4.5 V2 to replace the Rev 3.8 four-point steel ball bearing).
 - **Related parts:** Turret Base Ring, Cross-Roller Bearing Raceway, Ballistic Retention Ring, Ceramic Roller Sphericity.
 - **SOP Reference:** `HVF_SOP_2_Turret_Integration_v2.pdf`, Section 2.1, Page 2.
 - **Evidence Note:** DIRECTLY_STATED.
@@ -117,7 +117,7 @@ This glossary provides authoritative, source-grounded definitions for physical c
 - **Aliases:** `hydromount`, `hydromounts`, `hydraulic mount`, `active hydromount`
 - **What it is:** An advanced fluid-filled elastomeric vibration isolation mount with electronically or hydraulically tuned fluid damping passages.
 - **What it does:** Isolates the vehicle hull and transmission from engine low-frequency torque pulses and attenuates high-frequency vibration during high-speed tactical cross-country operations.
-- **Where it fits:** V12 Powerpack Mounting Interface / Engine Bay Hull Pedestals (introduced in Rev 5.0 V2).
+- **Where it fits:** V12 Powerpack Mounting Interface / Engine Bay Hull Pedestals (introduced in Rev 6.0 V2).
 - **Related parts:** V12 Powerpack Engine, Crankshaft-to-Transmission Drive Shaft, Resilient Rubber-Metal Mount.
 - **SOP Reference:** `HVF_SOP_3_Engine_Alignment_v2.pdf`, Section 1.2 & 2.1, Page 2.
 - **Evidence Note:** DIRECTLY_STATED.
@@ -129,7 +129,7 @@ This glossary provides authoritative, source-grounded definitions for physical c
 - **What it does:** Eliminates parallel radial offset and angular face misalignment, preventing catastrophic driveline vibration, premature bearing destruction, flexible coupling shear, and power transmission failure.
 - **Where it fits:** Engine Bay Compartment between the V12 Powerpack and the cross-drive hydromechanical transmission.
 - **Related parts:** Crankshaft Output Flange, Transmission Input Flange, Dial Indicator Gauge, Laser Alignment Tool, Alignment Shims, Hydromounts.
-- **SOP Reference:** `HVF_SOP_3_Engine_Alignment.pdf` (Rev 4.2 / Rev 5.0), Section 2.0, 3.0 & 4.0, Page 2.
+- **SOP Reference:** `HVF_SOP_3_Engine_Alignment.pdf` (Rev 5.1 / Rev 6.0), Section 2.0, 3.0 & 4.0, Page 2.
 - **Evidence Note:** DIRECTLY_STATED. Dial indicator tolerances (0.05 mm V1, 0.02 mm V2) and shimming steps are directly stated in the Engine Alignment SOP.
 
 ---

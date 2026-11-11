@@ -1,0 +1,2104 @@
+{
+  "benchmark_version": "1.0.0",
+  "executed_at": "2026-11-10T23:59:04.608265+05:30",
+  "total_duration_sec": 2328.08,
+  "timeouts_sec": {
+    "ollama_connect": 5.0,
+    "embedding": 20.0,
+    "retrieval": 30.0,
+    "generation": 150.0,
+    "evaluation": 45.0
+  },
+  "top_k": 5,
+  "max_tokens": 512,
+  "max_context_chars": 8000,
+  "model": "gemma-2b:latest",
+  "embed_model": "nomic-embed-text:latest",
+  "preflight": {
+    "ollama_endpoint": "http://127.0.0.1:11434",
+    "generation_model": "gemma-2b:latest",
+    "embedding_model": "nomic-embed-text:latest",
+    "passed": true,
+    "faiss_vectors": 150,
+    "embedding_dim": 768,
+    "available_models": [
+      "gemma-2b:latest",
+      "nomic-embed-text:latest"
+    ]
+  },
+  "counts": {
+    "total_benchmark_questions": 30,
+    "completed": 28,
+    "passed": 20,
+    "failed": 8,
+    "timed_out": 2,
+    "errors": 0,
+    "skipped": 0
+  },
+  "sample_size": 30,
+  "metrics": {
+    "answer_correctness": 0.667,
+    "retrieval_precision_at_k": 0.807,
+    "retrieval_recall_at_k": 0.604,
+    "citation_correctness": 0.708,
+    "faithfulness_rate": 0.464,
+    "hallucination_rate": 0.071,
+    "abstention_accuracy": 0.333,
+    "intent_classification_accuracy": 0.643
+  },
+  "per_category": {
+    "basic_component_definition": {
+      "count": 3,
+      "completed": 3,
+      "correct": 3,
+      "faithful": 3,
+      "hallucinations": 0,
+      "citations_checked": 3,
+      "citations_correct": 1,
+      "timeouts": 0,
+      "errors": 0,
+      "accuracy": 1.0,
+      "faithfulness_rate": 1.0,
+      "hallucination_rate": 0.0,
+      "citation_accuracy": 0.333
+    },
+    "component_function": {
+      "count": 3,
+      "completed": 3,
+      "correct": 3,
+      "faithful": 1,
+      "hallucinations": 0,
+      "citations_checked": 3,
+      "citations_correct": 3,
+      "timeouts": 0,
+      "errors": 0,
+      "accuracy": 1.0,
+      "faithfulness_rate": 0.333,
+      "hallucination_rate": 0.0,
+      "citation_accuracy": 1.0
+    },
+    "component_relationship": {
+      "count": 3,
+      "completed": 3,
+      "correct": 3,
+      "faithful": 0,
+      "hallucinations": 1,
+      "citations_checked": 3,
+      "citations_correct": 2,
+      "timeouts": 0,
+      "errors": 0,
+      "accuracy": 1.0,
+      "faithfulness_rate": 0.0,
+      "hallucination_rate": 0.333,
+      "citation_accuracy": 0.667
+    },
+    "assembly_breakdown": {
+      "count": 3,
+      "completed": 3,
+      "correct": 3,
+      "faithful": 1,
+      "hallucinations": 0,
+      "citations_checked": 3,
+      "citations_correct": 3,
+      "timeouts": 0,
+      "errors": 0,
+      "accuracy": 1.0,
+      "faithfulness_rate": 0.333,
+      "hallucination_rate": 0.0,
+      "citation_accuracy": 1.0
+    },
+    "technical_specification": {
+      "count": 4,
+      "completed": 4,
+      "correct": 2,
+      "faithful": 4,
+      "hallucinations": 0,
+      "citations_checked": 4,
+      "citations_correct": 3,
+      "timeouts": 0,
+      "errors": 0,
+      "accuracy": 0.5,
+      "faithfulness_rate": 1.0,
+      "hallucination_rate": 0.0,
+      "citation_accuracy": 0.75
+    },
+    "procedural": {
+      "count": 3,
+      "completed": 3,
+      "correct": 2,
+      "faithful": 2,
+      "hallucinations": 1,
+      "citations_checked": 3,
+      "citations_correct": 2,
+      "timeouts": 0,
+      "errors": 0,
+      "accuracy": 0.667,
+      "faithfulness_rate": 0.667,
+      "hallucination_rate": 0.333,
+      "citation_accuracy": 0.667
+    },
+    "revision_comparison": {
+      "count": 3,
+      "completed": 1,
+      "correct": 0,
+      "faithful": 1,
+      "hallucinations": 0,
+      "citations_checked": 1,
+      "citations_correct": 1,
+      "timeouts": 2,
+      "errors": 0,
+      "accuracy": 0.0,
+      "faithfulness_rate": 1.0,
+      "hallucination_rate": 0.0,
+      "citation_accuracy": 1.0
+    },
+    "cross_document_impact": {
+      "count": 2,
+      "completed": 2,
+      "correct": 2,
+      "faithful": 1,
+      "hallucinations": 0,
+      "citations_checked": 2,
+      "citations_correct": 0,
+      "timeouts": 0,
+      "errors": 0,
+      "accuracy": 1.0,
+      "faithfulness_rate": 0.5,
+      "hallucination_rate": 0.0,
+      "citation_accuracy": 0.0
+    },
+    "insufficient_evidence": {
+      "count": 3,
+      "completed": 3,
+      "correct": 1,
+      "faithful": 0,
+      "hallucinations": 0,
+      "citations_checked": 2,
+      "citations_correct": 2,
+      "timeouts": 0,
+      "errors": 0,
+      "accuracy": 0.333,
+      "faithfulness_rate": 0.0,
+      "hallucination_rate": 0.0,
+      "citation_accuracy": 1.0
+    },
+    "abstention": {
+      "count": 3,
+      "completed": 3,
+      "correct": 1,
+      "faithful": 0,
+      "hallucinations": 0,
+      "citations_checked": 0,
+      "citations_correct": 0,
+      "timeouts": 0,
+      "errors": 0,
+      "accuracy": 0.333,
+      "faithfulness_rate": 0.0,
+      "hallucination_rate": 0.0,
+      "citation_accuracy": null
+    }
+  },
+  "limitations": "Initial n=30 question benchmark grounded in the 10 baseline SOP PDFs. Not proof of universal accuracy across unseen or newly uploaded documents; local gemma-2b (gemma-4-E2B 4.6B CPU) inference exhibits latency proportional to prompt size.",
+  "results": [
+    {
+      "id": "B01",
+      "category": "basic_component_definition",
+      "question": "What is a hull?",
+      "revision_mode": "All Revisions (Default)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "BASIC_DEFINITION",
+      "predicted_intent": "BASIC_DEFINITION",
+      "intent_match": true,
+      "expect_abstention": false,
+      "did_abstain": false,
+      "abstention_correct": null,
+      "fact_coverage": 1.0,
+      "prohibited_hits": [],
+      "answer_correct": true,
+      "retrieval_precision_at_k": 1.0,
+      "retrieval_recall_at_k": 0.5,
+      "citation_correct": true,
+      "citation_breakdown": {
+        "doc_match": true,
+        "rev_match": true,
+        "section_match": true,
+        "page_match": true
+      },
+      "faithful": true,
+      "has_hallucination": false,
+      "automated_quality_estimate": 91.8,
+      "automated_warning_label": "HIGH EVIDENCE SUPPORT",
+      "stage_timings_sec": {
+        "connectivity": 0.027,
+        "retrieval": 0.04,
+        "generation": 0.026,
+        "evaluation": 0.018,
+        "scoring": 0.001
+      },
+      "latency_sec": 0.11,
+      "answer_preview": "### Armoured Hull Tub Assembly\n\n**What it is**\nThe armoured hull is the primary welded monocoque structural chassis and ballistic envelope of the combat vehicle that houses the crew, powerpack, ammunition, and internal sub-systems.\n\n**What it does**\nIt provides all-aspect ballistic protection against direct kinetic and chemical threats, absorbs dynamic operational shock from terrain and main gun recoil, and maintains rigid dimensional alignment a",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_1_Hull_Welding.pdf",
+          "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+          "section": "SECTION 1.0 & SECTION 2.0",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "id": "B02",
+      "category": "basic_component_definition",
+      "question": "What is a turret base ring?",
+      "revision_mode": "All Revisions (Default)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "BASIC_DEFINITION",
+      "predicted_intent": "BASIC_DEFINITION",
+      "intent_match": true,
+      "expect_abstention": false,
+      "did_abstain": false,
+      "abstention_correct": null,
+      "fact_coverage": 1.0,
+      "prohibited_hits": [],
+      "answer_correct": true,
+      "retrieval_precision_at_k": 1.0,
+      "retrieval_recall_at_k": 0.5,
+      "citation_correct": false,
+      "citation_breakdown": {
+        "doc_match": true,
+        "rev_match": false,
+        "section_match": true,
+        "page_match": true
+      },
+      "faithful": true,
+      "has_hallucination": false,
+      "automated_quality_estimate": 93.1,
+      "automated_warning_label": "HIGH EVIDENCE SUPPORT",
+      "stage_timings_sec": {
+        "connectivity": 0.026,
+        "retrieval": 0.024,
+        "generation": 0.021,
+        "evaluation": 0.008,
+        "scoring": 0.0
+      },
+      "latency_sec": 0.08,
+      "answer_preview": "### Turret Base Ring\n\n**What it is**\nA precision-forged and machined heavy steel annular ring mounted on the vehicle hull's upper deck plinth.\n\n**What it does**\nProvides the stationary circular foundation and bearing raceway seat that carries the rotating turret weight and reacts dynamic main gun firing loads.\n\n**Where it fits**\nTurret Integration System / Hull Upper Deck Interface.\n\n**Related parts**\nCross-Roller Bearing Raceway, Internal Ring G",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_2_Turret_Integration.pdf",
+          "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+          "section": "SECTION 1.1 & SECTION 2.1",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "id": "B03",
+      "category": "basic_component_definition",
+      "question": "What is a torsion bar?",
+      "revision_mode": "All Revisions (Default)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "BASIC_DEFINITION",
+      "predicted_intent": "BASIC_DEFINITION",
+      "intent_match": true,
+      "expect_abstention": false,
+      "did_abstain": false,
+      "abstention_correct": null,
+      "fact_coverage": 1.0,
+      "prohibited_hits": [],
+      "answer_correct": true,
+      "retrieval_precision_at_k": 1.0,
+      "retrieval_recall_at_k": 0.5,
+      "citation_correct": false,
+      "citation_breakdown": {
+        "doc_match": true,
+        "rev_match": false,
+        "section_match": true,
+        "page_match": true
+      },
+      "faithful": true,
+      "has_hallucination": false,
+      "automated_quality_estimate": 93.1,
+      "automated_warning_label": "HIGH EVIDENCE SUPPORT",
+      "stage_timings_sec": {
+        "connectivity": 0.027,
+        "retrieval": 0.024,
+        "generation": 0.024,
+        "evaluation": 0.006,
+        "scoring": 0.0
+      },
+      "latency_sec": 0.08,
+      "answer_preview": "### Torsion Bar\n\n**What it is**\nA high-strength alloy spring steel cylindrical shaft with precision splined ends that spans transversely across the bottom width of the vehicle hull.\n\n**What it does**\nActs as the primary suspension spring for each road wheel; twists elastically under balancer arm deflection to absorb shock loads and support vehicle sprung weight.\n\n**Where it fits**\nTorsion Suspension Subsystem (installed inside transverse hull tub",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_4_Torsion_Suspension.pdf",
+          "revision": "Rev 4.2 (Baseline) / Rev 5.0 (Revised)",
+          "section": "SECTION 1.1 & SECTION 2.1",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "id": "B04",
+      "category": "component_function",
+      "question": "What does a ceramic-hybrid bearing do?",
+      "revision_mode": "All Revisions (Default)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "COMPONENT_FUNCTION",
+      "predicted_intent": "COMPONENT_FUNCTION",
+      "intent_match": true,
+      "expect_abstention": false,
+      "did_abstain": false,
+      "abstention_correct": null,
+      "fact_coverage": 0.667,
+      "prohibited_hits": [],
+      "answer_correct": true,
+      "retrieval_precision_at_k": 0.636,
+      "retrieval_recall_at_k": 1.0,
+      "citation_correct": true,
+      "citation_breakdown": {
+        "doc_match": true,
+        "rev_match": true,
+        "section_match": true,
+        "page_match": true
+      },
+      "faithful": true,
+      "has_hallucination": false,
+      "automated_quality_estimate": 88.8,
+      "automated_warning_label": "HIGH EVIDENCE SUPPORT",
+      "stage_timings_sec": {
+        "connectivity": 0.017,
+        "retrieval": 0.676,
+        "generation": 99.519,
+        "evaluation": 0.105,
+        "scoring": 0.002
+      },
+      "latency_sec": 100.32,
+      "answer_preview": "Here is the explanation of what a ceramic-hybrid bearing does, based strictly on the provided SOP evidence:\n\n**1. Overview:**\nA ceramic-hybrid bearing assembly is a major assembly protocol used for the assembly and verification checkpoints of the Ceramic-hybrid Cross-roller Bearing Assembly [HVF\\_SOP\\_2\\_Turret\\_Integration\\_v2.pdf, Rev 4.5 [Version 2.0], SECTION 2.0 \u2014 CERAMIC-HYBRID CROSS-ROLLER BEARING ASSEMBLY &].\n\n**2. Main Components / Assem",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
+          "revision": "Rev 4.5 [Version 2.0]",
+          "section": "SECTION 2.0 \u2014 CERAMIC-HYBRID CROSS-ROLLER BEARING ASSEMBLY &",
+          "page": 3
+        },
+        {
+          "filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
+          "revision": "Rev 4.5 [Version 2.0]",
+          "section": "SECTION 2.0 \u2014 FOUR-POINT CONTACT BALL / CROSS-ROLLER BEARING RACEWAY",
+          "page": 3
+        },
+        {
+          "filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
+          "revision": "Rev 4.5 [Version 2.0]",
+          "section": "SECTION 1.0 \u2014 SUB-MICRON LASER TRACKER PLINTH MAPPING & MULTI-AXIS",
+          "page": 2
+        },
+        {
+          "filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
+          "revision": "Rev 4.5 [Version 2.0]",
+          "section": "SECTION 2.0 \u2014 CERAMIC-HYBRID CROSS-ROLLER BEARING ASSEMBLY &",
+          "page": 3
+        },
+        {
+          "filename": "HVF_SOP_4_Torsion_Suspension_v2.pdf",
+          "revision": "Rev 5.2 [Version 2.0]",
+          "section": "SECTION 2.0 \u2014 BALANCER ARM NEEDLE-BEARING HOUSING & LABYRINTH SEAL",
+          "page": 3
+        }
+      ]
+    },
+    {
+      "id": "B05",
+      "category": "component_function",
+      "question": "What is the function of a hydro-pneumatic recuperator?",
+      "revision_mode": "All Revisions (Default)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "COMPONENT_FUNCTION",
+      "predicted_intent": "COMPONENT_FUNCTION",
+      "intent_match": true,
+      "expect_abstention": false,
+      "did_abstain": false,
+      "abstention_correct": null,
+      "fact_coverage": 1.0,
+      "prohibited_hits": [],
+      "answer_correct": true,
+      "retrieval_precision_at_k": 0.417,
+      "retrieval_recall_at_k": 0.5,
+      "citation_correct": true,
+      "citation_breakdown": {
+        "doc_match": true,
+        "rev_match": true,
+        "section_match": true,
+        "page_match": true
+      },
+      "faithful": false,
+      "has_hallucination": false,
+      "automated_quality_estimate": 67.9,
+      "automated_warning_label": "UNSUPPORTED CLAIMS DETECTED",
+      "stage_timings_sec": {
+        "connectivity": 0.021,
+        "retrieval": 0.577,
+        "generation": 90.654,
+        "evaluation": 0.081,
+        "scoring": 0.001
+      },
+      "latency_sec": 91.33,
+      "answer_preview": "1. Overview:\nThe Hydro-Pneumatic Recuperator is an assembly designed to compress nitrogen gas during gun recoil and utilize this stored energy to push the gun barrel back into battery position [HVF_SOP_5_Gun_Calibration_v2.pdf, Rev 5.4 [Version 2.0], SECTION 3.0 \u2014 HYDRO-PNEUMATIC RECUPERATOR & HYDRAULIC RECOIL BUFFER, Page 4].\n\n2. Main Components / Assemblies:\n*   **Hydro-Pneumatic Recuperator** (ENTITY TYPE: ASSEMBLY): A nitrogen-pressurized flu",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_5_Gun_Calibration_v2.pdf",
+          "revision": "Rev 5.4 [Version 2.0]",
+          "section": "SECTION 3.0 \u2014 HYDRO-PNEUMATIC RECUPERATOR & HYDRAULIC RECOIL BUFFER",
+          "page": 4
+        },
+        {
+          "filename": "HVF_SOP_5_Gun_Calibration_v2.pdf",
+          "revision": "Rev 5.4 [Version 2.0]",
+          "section": "SECTION 3.0 \u2014 HYDRO-PNEUMATIC RECUPERATOR & HYDRAULIC RECOIL BUFFER",
+          "page": 4
+        },
+        {
+          "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+          "revision": "Rev 6.0 [Version 2.0]",
+          "section": "SECTION 1.0 \u2014 REAR ENGINE BAY METROLOGY, HYDROMOUNT DAMPING &",
+          "page": 2
+        },
+        {
+          "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+          "revision": "Rev 6.0 [Version 2.0]",
+          "section": "SECTION 1.0 \u2014 REAR ENGINE BAY METROLOGY, HYDROMOUNT DAMPING &",
+          "page": 2
+        },
+        {
+          "filename": "HVF_SOP_4_Torsion_Suspension_v2.pdf",
+          "revision": "Rev 5.2 [Version 2.0]",
+          "section": "SECTION 2.0 \u2014 BALANCER ARM NEEDLE BEARING HOUSINGS & TRIPLE-LIP",
+          "page": 3
+        }
+      ]
+    },
+    {
+      "id": "B06",
+      "category": "component_function",
+      "question": "What does the labyrinth seal do in the suspension housing?",
+      "revision_mode": "All Revisions (Default)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "COMPONENT_FUNCTION",
+      "predicted_intent": "COMPONENT_FUNCTION",
+      "intent_match": true,
+      "expect_abstention": false,
+      "did_abstain": false,
+      "abstention_correct": null,
+      "fact_coverage": 1.0,
+      "prohibited_hits": [],
+      "answer_correct": true,
+      "retrieval_precision_at_k": 1.0,
+      "retrieval_recall_at_k": 0.5,
+      "citation_correct": true,
+      "citation_breakdown": {
+        "doc_match": true,
+        "rev_match": true,
+        "section_match": true,
+        "page_match": true
+      },
+      "faithful": false,
+      "has_hallucination": false,
+      "automated_quality_estimate": 72.0,
+      "automated_warning_label": "UNSUPPORTED CLAIMS DETECTED",
+      "stage_timings_sec": {
+        "connectivity": 0.033,
+        "retrieval": 0.64,
+        "generation": 103.112,
+        "evaluation": 0.121,
+        "scoring": 0.001
+      },
+      "latency_sec": 103.91,
+      "answer_preview": "1. Overview:\nThe Labyrinth Seal is a multi-passage contoured rubber and bronze seal designed to prevent contamination of the needle-bearing pivot points within the suspension housing [HVF_SOP_4_Torsion_Suspension_v2.pdf, Rev 5.2 [Version 2.0], SECTION 2.0 \u2014 BALANCER ARM NEEDLE-BEA..., Page 3].\n\n2. Main Components / Assemblies:\n*   **Labyrinth Seal** (ENTITY TYPE: PHYSICAL\\_COMPONENT): A multi-passage contoured rubber and bronze seal [HVF_SOP_4_To",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_4_Torsion_Suspension_v2.pdf",
+          "revision": "Rev 5.2 [Version 2.0]",
+          "section": "SECTION 2.0 \u2014 BALANCER ARM NEEDLE-BEARING HOUSING & LABYRINTH SEAL",
+          "page": 3
+        },
+        {
+          "filename": "HVF_SOP_4_Torsion_Suspension_v2.pdf",
+          "revision": "Rev 5.2 [Version 2.0]",
+          "section": "SECTION 2.0 \u2014 BALANCER ARM NEEDLE-BEARING HOUSING & LABYRINTH SEAL",
+          "page": 3
+        },
+        {
+          "filename": "HVF_SOP_4_Torsion_Suspension_v2.pdf",
+          "revision": "Rev 5.2 [Version 2.0]",
+          "section": "SECTION 2.0 \u2014 BALANCER ARM NEEDLE-BEARING HOUSING & LABYRINTH SEAL",
+          "page": 3
+        },
+        {
+          "filename": "HVF_SOP_4_Torsion_Suspension_v2.pdf",
+          "revision": "Rev 5.2 [Version 2.0]",
+          "section": "SECTION 1.0 \u2014 TORSION BAR METALLURGICAL STAMP AUDIT, SHOT-PEENING &",
+          "page": 2
+        },
+        {
+          "filename": "HVF_SOP_4_Torsion_Suspension_v2.pdf",
+          "revision": "Rev 5.2 [Version 2.0]",
+          "section": "SECTION 4.0 \u2014 HYDRAULIC ROTARY DAMPER CALIBRATION & ROAD-WHEEL HUB",
+          "page": 5
+        }
+      ]
+    },
+    {
+      "id": "B07",
+      "category": "component_relationship",
+      "question": "How is the torsion bar connected to the balancer arm?",
+      "revision_mode": "All Revisions (Default)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "COMPONENT_RELATIONSHIPS",
+      "predicted_intent": "COMPONENT_RELATIONSHIPS",
+      "intent_match": true,
+      "expect_abstention": false,
+      "did_abstain": false,
+      "abstention_correct": null,
+      "fact_coverage": 1.0,
+      "prohibited_hits": [],
+      "answer_correct": true,
+      "retrieval_precision_at_k": 1.0,
+      "retrieval_recall_at_k": 0.5,
+      "citation_correct": false,
+      "citation_breakdown": {
+        "doc_match": true,
+        "rev_match": true,
+        "section_match": false,
+        "page_match": true
+      },
+      "faithful": false,
+      "has_hallucination": false,
+      "automated_quality_estimate": 72.0,
+      "automated_warning_label": "UNSUPPORTED CLAIMS DETECTED",
+      "stage_timings_sec": {
+        "connectivity": 0.041,
+        "retrieval": 0.665,
+        "generation": 94.728,
+        "evaluation": 0.087,
+        "scoring": 0.001
+      },
+      "latency_sec": 95.52,
+      "answer_preview": "1. Overview: The connection between the torsion bar and the balancer arm is a mechanical linkage designed to transfer movement from the road wheels to the torsion bar.\n\n2. Main Components / Assemblies:\n    *   **Balancer Arm** (ENTITY TYPE: PHYSICAL\\_COMPONENT): A rugged lever arm hinged to the hull side plate that transfers upward road wheel movement into rotational twisting of the torsion bar [HVF\\_SOP\\_4\\_Torsion\\_Suspension\\_v2.pdf, Rev 5.2 [",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_4_Torsion_Suspension_v2.pdf",
+          "revision": "Rev 5.2 [Version 2.0]",
+          "section": "SECTION 1.0 \u2014 TORSION BAR BARCODE SCANNING, ULTRASONIC FLAW",
+          "page": 2
+        },
+        {
+          "filename": "HVF_SOP_4_Torsion_Suspension_v2.pdf",
+          "revision": "Rev 5.2 [Version 2.0]",
+          "section": "SECTION 2.0 \u2014 BALANCER ARM NEEDLE-BEARING HOUSING & LABYRINTH SEAL",
+          "page": 3
+        },
+        {
+          "filename": "HVF_SOP_4_Torsion_Suspension_v2.pdf",
+          "revision": "Rev 5.2 [Version 2.0]",
+          "section": "SECTION 1.0 \u2014 TORSION BAR METALLURGICAL STAMP AUDIT, SHOT-PEENING &",
+          "page": 2
+        },
+        {
+          "filename": "HVF_SOP_4_Torsion_Suspension_v2.pdf",
+          "revision": "Rev 5.2 [Version 2.0]",
+          "section": "SECTION 2.0 \u2014 BALANCER ARM NEEDLE BEARING HOUSINGS & TRIPLE-LIP",
+          "page": 3
+        },
+        {
+          "filename": "HVF_SOP_4_Torsion_Suspension_v2.pdf",
+          "revision": "Rev 5.2 [Version 2.0]",
+          "section": "SECTION 4.0 \u2014 SEMI-ACTIVE ROTARY MAGNETORHEOLOGICAL DAMPER &",
+          "page": 5
+        }
+      ]
+    },
+    {
+      "id": "B08",
+      "category": "component_relationship",
+      "question": "How is the turret base ring connected to the cross-roller bearing raceway?",
+      "revision_mode": "All Revisions (Default)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "COMPONENT_RELATIONSHIPS",
+      "predicted_intent": "COMPONENT_RELATIONSHIPS",
+      "intent_match": true,
+      "expect_abstention": false,
+      "did_abstain": false,
+      "abstention_correct": null,
+      "fact_coverage": 1.0,
+      "prohibited_hits": [],
+      "answer_correct": true,
+      "retrieval_precision_at_k": 0.917,
+      "retrieval_recall_at_k": 0.5,
+      "citation_correct": true,
+      "citation_breakdown": {
+        "doc_match": true,
+        "rev_match": true,
+        "section_match": true,
+        "page_match": true
+      },
+      "faithful": false,
+      "has_hallucination": false,
+      "automated_quality_estimate": 72.0,
+      "automated_warning_label": "UNSUPPORTED CLAIMS DETECTED",
+      "stage_timings_sec": {
+        "connectivity": 0.031,
+        "retrieval": 0.622,
+        "generation": 123.304,
+        "evaluation": 0.145,
+        "scoring": 0.002
+      },
+      "latency_sec": 124.11,
+      "answer_preview": "1. Overview: The connection between the turret base ring and the cross-roller bearing raceway is a mechanical mounting relationship designed to secure the bearing assembly to the hull structure.\n\n2. Main Components / Assemblies:\n    *   **Cross-Roller Bearing Raceway** (ENTITY TYPE: ASSEMBLY): A large-diameter circular bearing assembly with crossed cylindrical rollers designed for smooth 360-degree rotation of the heavy turret [HVF\\_SOP\\_2\\_Turre",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
+          "revision": "Rev 4.5 [Version 2.0]",
+          "section": "SECTION 2.0 \u2014 FOUR-POINT CONTACT BALL / CROSS-ROLLER BEARING RACEWAY",
+          "page": 3
+        },
+        {
+          "filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
+          "revision": "Rev 4.5 [Version 2.0]",
+          "section": "SECTION 1.0 \u2014 HULL PLINTH & TURRET BASE RING CO-PLANARITY LASER",
+          "page": 2
+        },
+        {
+          "filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
+          "revision": "Rev 4.5 [Version 2.0]",
+          "section": "SECTION 2.0 \u2014 CERAMIC-HYBRID CROSS-ROLLER BEARING ASSEMBLY &",
+          "page": 3
+        },
+        {
+          "filename": "HVF_SOP_4_Torsion_Suspension_v2.pdf",
+          "revision": "Rev 5.2 [Version 2.0]",
+          "section": "SECTION 2.0 \u2014 BALANCER ARM NEEDLE BEARING HOUSINGS & TRIPLE-LIP",
+          "page": 3
+        },
+        {
+          "filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
+          "revision": "Rev 4.5 [Version 2.0]",
+          "section": "SECTION 3.0 \u2014 INTERNAL RING GEAR MOUNTING, ECCENTRICITY & PINION",
+          "page": 4
+        }
+      ]
+    },
+    {
+      "id": "B09",
+      "category": "component_relationship",
+      "question": "How does the drive sprocket interface with the track system?",
+      "revision_mode": "All Revisions (Default)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "COMPONENT_RELATIONSHIPS",
+      "predicted_intent": "COMPONENT_RELATIONSHIPS",
+      "intent_match": true,
+      "expect_abstention": false,
+      "did_abstain": false,
+      "abstention_correct": null,
+      "fact_coverage": 0.667,
+      "prohibited_hits": [],
+      "answer_correct": true,
+      "retrieval_precision_at_k": 0.583,
+      "retrieval_recall_at_k": 0.5,
+      "citation_correct": true,
+      "citation_breakdown": {
+        "doc_match": true,
+        "rev_match": true,
+        "section_match": true,
+        "page_match": true
+      },
+      "faithful": false,
+      "has_hallucination": true,
+      "automated_quality_estimate": 61.9,
+      "automated_warning_label": "UNSUPPORTED CLAIMS DETECTED",
+      "stage_timings_sec": {
+        "connectivity": 0.035,
+        "retrieval": 0.543,
+        "generation": 119.087,
+        "evaluation": 0.126,
+        "scoring": 0.001
+      },
+      "latency_sec": 119.79,
+      "answer_preview": "Here is the explanation of how the drive sprocket interfaces with the track system, based strictly on the provided SOP evidence:\n\n**1. Overview:**\nThe Drive Sprocket is a component that is a toothed steel wheel mounted to the final drive hub. Its primary role is to engage with the track link pins to provide the necessary force to propel the vehicle along the track [HVF\\_SOP\\_4\\_Torsion\\_Suspension\\_v2.pdf, Rev 5.2 [Version 2.0], SECTION 5.0 \u2014 DRI",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_4_Torsion_Suspension_v2.pdf",
+          "revision": "Rev 5.2 [Version 2.0]",
+          "section": "SECTION 5.0 \u2014 DRIVE SPROCKET, IDLER CRANK & ROAD-WHEEL LASER PLANE",
+          "page": 6
+        },
+        {
+          "filename": "HVF_SOP_4_Torsion_Suspension_v2.pdf",
+          "revision": "Rev 5.2 [Version 2.0]",
+          "section": "SECTION 1.0 \u2014 TORSION BAR BARCODE SCANNING, ULTRASONIC FLAW",
+          "page": 2
+        },
+        {
+          "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+          "revision": "Rev 5.0 [Version 2.0]",
+          "section": "SECTION 4.0 \u2014 SYNCHRONIZED TWIN-WIRE TANDEM GMAW & VISION",
+          "page": 5
+        },
+        {
+          "filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
+          "revision": "Rev 4.5 [Version 2.0]",
+          "section": "SECTION 3.0 \u2014 INTERNAL RING GEAR MOUNTING, ECCENTRICITY & PINION",
+          "page": 4
+        },
+        {
+          "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+          "revision": "Rev 6.0 [Version 2.0]",
+          "section": "SECTION 3.0 \u2014 DUAL-LASER CRANKSHAFT-TO-TRANSMISSION INPUT SHAFT",
+          "page": 4
+        }
+      ]
+    },
+    {
+      "id": "B10",
+      "category": "assembly_breakdown",
+      "question": "What are the main assemblies and plates of the hull welding SOP?",
+      "revision_mode": "All Revisions (Default)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "COMPONENT_OVERVIEW",
+      "predicted_intent": "ASSEMBLY_SUBSYSTEM",
+      "intent_match": false,
+      "expect_abstention": false,
+      "did_abstain": false,
+      "abstention_correct": null,
+      "fact_coverage": 1.0,
+      "prohibited_hits": [],
+      "answer_correct": true,
+      "retrieval_precision_at_k": 1.0,
+      "retrieval_recall_at_k": 0.5,
+      "citation_correct": true,
+      "citation_breakdown": {
+        "doc_match": true,
+        "rev_match": true,
+        "section_match": true,
+        "page_match": true
+      },
+      "faithful": false,
+      "has_hallucination": false,
+      "automated_quality_estimate": 72.0,
+      "automated_warning_label": "UNSUPPORTED CLAIMS DETECTED",
+      "stage_timings_sec": {
+        "connectivity": 0.027,
+        "retrieval": 0.467,
+        "generation": 106.716,
+        "evaluation": 0.223,
+        "scoring": 0.002
+      },
+      "latency_sec": 107.44,
+      "answer_preview": "Here is the explanation of the main assemblies and plates of the hull welding SOP, strictly based on the provided evidence:\n\n**1. Overview:**\nThe hull welding SOP details the construction and structural elements of the armoured hull, focusing on the main load-bearing structure, protective compartments, and the specific welding and assembly procedures required for these components [HVF_SOP_1_Hull_Welding_v2.pdf, Rev 5.0 [Version 2.0]].\n\n**2. Main ",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+          "revision": "Rev 5.0 [Version 2.0]",
+          "section": "SECTION 2.0 \u2014 HULL JIG FIXTURE DATUM LOCKING & ROOT GAP DIMENSIONAL",
+          "page": 3
+        },
+        {
+          "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+          "revision": "Rev 5.0 [Version 2.0]",
+          "section": "SECTION 4.0 \u2014 MULTI-PASS PULSE-GMAW & ROBOTIC SUBMERGED ARC WELDING",
+          "page": 5
+        },
+        {
+          "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+          "revision": "Rev 5.0 [Version 2.0]",
+          "section": "SECTION 1.0 \u2014 RHA PLATE RECEIVING, SPECTROGRAPHIC VERIFICATION & EDGE",
+          "page": 2
+        },
+        {
+          "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+          "revision": "Rev 5.0 [Version 2.0]",
+          "section": "SECTION 2.0 \u2014 HULL JIG FIXTURE DATUM LOCKING & ROOT GAP DIMENSIONAL",
+          "page": 3
+        },
+        {
+          "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+          "revision": "Rev 5.0 [Version 2.0]",
+          "section": "SECTION 3.0 \u2014 INDUCTION PRE-HEATING & LOW-HYDROGEN CONSUMABLE",
+          "page": 4
+        }
+      ]
+    },
+    {
+      "id": "B11",
+      "category": "assembly_breakdown",
+      "question": "What are the main components of the turret mount system?",
+      "revision_mode": "All Revisions (Default)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "COMPONENT_OVERVIEW",
+      "predicted_intent": "COMPONENT_OVERVIEW",
+      "intent_match": true,
+      "expect_abstention": false,
+      "did_abstain": false,
+      "abstention_correct": null,
+      "fact_coverage": 1.0,
+      "prohibited_hits": [],
+      "answer_correct": true,
+      "retrieval_precision_at_k": 1.0,
+      "retrieval_recall_at_k": 0.5,
+      "citation_correct": true,
+      "citation_breakdown": {
+        "doc_match": true,
+        "rev_match": true,
+        "section_match": true,
+        "page_match": true
+      },
+      "faithful": false,
+      "has_hallucination": false,
+      "automated_quality_estimate": 71.8,
+      "automated_warning_label": "UNSUPPORTED CLAIMS DETECTED",
+      "stage_timings_sec": {
+        "connectivity": 0.06,
+        "retrieval": 1.034,
+        "generation": 115.138,
+        "evaluation": 0.141,
+        "scoring": 0.001
+      },
+      "latency_sec": 116.37,
+      "answer_preview": "Here is the breakdown of the main components of the turret mount system, based strictly on the provided SOP evidence:\n\n**1. Overview:**\nThe turret mount system involves several key components designed to ensure the precise alignment, rotation (azimuth traverse), and structural integrity of the turret relative to the hull. These components work together to achieve line-of-sight stabilization and prevent structural failure under operational stress ",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
+          "revision": "Rev 4.5 [Version 2.0]",
+          "section": "SECTION 1.0 \u2014 HULL PLINTH & TURRET BASE RING CO-PLANARITY LASER",
+          "page": 2
+        },
+        {
+          "filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
+          "revision": "Rev 4.5 [Version 2.0]",
+          "section": "SECTION 3.0 \u2014 INTERNAL RING GEAR MOUNTING, ECCENTRICITY & PINION",
+          "page": 4
+        },
+        {
+          "filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
+          "revision": "Rev 4.5 [Version 2.0]",
+          "section": "SECTION 3.0 \u2014 INTERNAL RING GEAR MOUNTING, ECCENTRICITY & PINION",
+          "page": 4
+        },
+        {
+          "filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
+          "revision": "Rev 4.5 [Version 2.0]",
+          "section": "SECTION 2.0 \u2014 FOUR-POINT CONTACT BALL / CROSS-ROLLER BEARING RACEWAY",
+          "page": 3
+        },
+        {
+          "filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
+          "revision": "Rev 4.5 [Version 2.0]",
+          "section": "SECTION 4.0 \u2014 OVERHEAD CRANE TURRET MATING & BALLISTIC RETENTION RING",
+          "page": 5
+        }
+      ]
+    },
+    {
+      "id": "B12",
+      "category": "assembly_breakdown",
+      "question": "What components make up the V12 powerpack assembly?",
+      "revision_mode": "All Revisions (Default)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "ASSEMBLY_SUBSYSTEM",
+      "predicted_intent": "ASSEMBLY_SUBSYSTEM",
+      "intent_match": true,
+      "expect_abstention": false,
+      "did_abstain": false,
+      "abstention_correct": null,
+      "fact_coverage": 1.0,
+      "prohibited_hits": [],
+      "answer_correct": true,
+      "retrieval_precision_at_k": 1.0,
+      "retrieval_recall_at_k": 0.5,
+      "citation_correct": true,
+      "citation_breakdown": {
+        "doc_match": true,
+        "rev_match": true,
+        "section_match": true,
+        "page_match": true
+      },
+      "faithful": true,
+      "has_hallucination": false,
+      "automated_quality_estimate": 86.5,
+      "automated_warning_label": "HIGH EVIDENCE SUPPORT",
+      "stage_timings_sec": {
+        "connectivity": 0.031,
+        "retrieval": 1.318,
+        "generation": 113.427,
+        "evaluation": 0.082,
+        "scoring": 0.001
+      },
+      "latency_sec": 114.86,
+      "answer_preview": "Here is the breakdown of the components that make up the V12 powerpack assembly, based strictly on the provided SOP evidence:\n\n**1. Overview:**\nThe V12 Powerpack Engine is a high-output, four-stroke, multi-fuel turbocharged diesel engine that is responsible for supplying motive power for combat vehicle propulsion and auxiliary system hydraulic/electric pumps [HVF\\_SOP\\_3\\_Engine\\_Alignment\\_v2.pdf, Rev 6.0 [Version 2.0], SECTION 2.0 \u2014 V12 POWERPA",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+          "revision": "Rev 6.0 [Version 2.0]",
+          "section": "SECTION 2.0 \u2014 V12 POWERPACK HOISTING, TRUNNION LOWERING & SHIM PACK",
+          "page": 3
+        },
+        {
+          "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+          "revision": "Rev 6.0 [Version 2.0]",
+          "section": "SECTION 2.0 \u2014 POWERPACK HOISTING, 3D GUIDED LOWERING & HYDRAULIC",
+          "page": 3
+        },
+        {
+          "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+          "revision": "Rev 6.0 [Version 2.0]",
+          "section": "SECTION 1.0 \u2014 REAR ENGINE BAY METROLOGY, HYDROMOUNT DAMPING &",
+          "page": 2
+        },
+        {
+          "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+          "revision": "Rev 6.0 [Version 2.0]",
+          "section": "SECTION 5.0 \u2014 CYCLONIC AIR FILTRATION, TURBOCHARGER DUCTING & EXHAUST",
+          "page": 6
+        },
+        {
+          "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+          "revision": "Rev 6.0 [Version 2.0]",
+          "section": "SECTION 4.0 \u2014 HIGH-PRESSURE FUEL, DRY-SUMP LUBRICATION & COOLING LOOP",
+          "page": 5
+        }
+      ]
+    },
+    {
+      "id": "B13",
+      "category": "technical_specification",
+      "question": "What are the preheat and interpass temperature limits in Hull Welding V1?",
+      "revision_mode": "V1 Only (Baseline Archive)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "TECHNICAL_SPECIFICATION",
+      "predicted_intent": "GENERAL_PROCEDURAL",
+      "intent_match": false,
+      "expect_abstention": false,
+      "did_abstain": false,
+      "abstention_correct": null,
+      "fact_coverage": 1.0,
+      "prohibited_hits": [],
+      "answer_correct": true,
+      "retrieval_precision_at_k": 1.0,
+      "retrieval_recall_at_k": 1.0,
+      "citation_correct": true,
+      "citation_breakdown": {
+        "doc_match": true,
+        "rev_match": true,
+        "section_match": true,
+        "page_match": true
+      },
+      "faithful": true,
+      "has_hallucination": false,
+      "automated_quality_estimate": 97.2,
+      "automated_warning_label": "HIGH EVIDENCE SUPPORT",
+      "stage_timings_sec": {
+        "connectivity": 0.019,
+        "retrieval": 1.1,
+        "generation": 34.923,
+        "evaluation": 0.019,
+        "scoring": 0.001
+      },
+      "latency_sec": 36.06,
+      "answer_preview": "The preheat and interpass temperature limits for Hull Welding are specified in Table 3.0 of the SOP documentation [HVF_SOP_1_Hull_Welding.pdf, Rev 4.2 (2026), 3.0.A SHOP-FLOOR EXECUTION & METROLOGY VERIFICATION DIRECTIVES, Page 4]:\n\n*   **Soak Preheat Temperature:** $150^\\circ\\text{C} \u2013 175^\\circ\\text{C}$ (for a $75\\text{ mm}$ soak zone) [HVF_SOP_1_Hull_Welding.pdf, Rev 4.2 (2026), 3.0.A SHOP-FLOOR EXECUTION & METROLOGY VERIFICATION DIRECTIVES, P",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_1_Hull_Welding.pdf",
+          "revision": "Rev 4.2 (2026) | 30-Oct-2026",
+          "section": "SECTION 4.0 \u2014 MULTI-PASS PULSE-GMAW & ROBOTIC SUBMERGED ARC WELDING",
+          "page": "4-5"
+        },
+        {
+          "filename": "HVF_SOP_1_Hull_Welding.pdf",
+          "revision": "Rev 4.2 (2026) | 30-Oct-2026",
+          "section": "3.0.A SHOP-FLOOR EXECUTION & METROLOGY VERIFICATION DIRECTIVES",
+          "page": 4
+        },
+        {
+          "filename": "HVF_SOP_1_Hull_Welding.pdf",
+          "revision": "Rev 4.2 (2026) | 30-Oct-2026",
+          "section": "5.0.A SHOP-FLOOR EXECUTION & METROLOGY VERIFICATION DIRECTIVES",
+          "page": 6
+        }
+      ]
+    },
+    {
+      "id": "B14",
+      "category": "technical_specification",
+      "question": "What is the hull volumetric datum envelope tolerance in Hull Welding V2?",
+      "revision_mode": "V2 Only (Latest Revision)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "TECHNICAL_SPECIFICATION",
+      "predicted_intent": "TECHNICAL_SPECIFICATION",
+      "intent_match": true,
+      "expect_abstention": false,
+      "did_abstain": false,
+      "abstention_correct": null,
+      "fact_coverage": 0.0,
+      "prohibited_hits": [],
+      "answer_correct": false,
+      "retrieval_precision_at_k": 1.0,
+      "retrieval_recall_at_k": 1.0,
+      "citation_correct": true,
+      "citation_breakdown": {
+        "doc_match": true,
+        "rev_match": true,
+        "section_match": true,
+        "page_match": true
+      },
+      "faithful": true,
+      "has_hallucination": false,
+      "automated_quality_estimate": 85.7,
+      "automated_warning_label": "HIGH EVIDENCE SUPPORT",
+      "stage_timings_sec": {
+        "connectivity": 0.02,
+        "retrieval": 0.617,
+        "generation": 72.296,
+        "evaluation": 0.097,
+        "scoring": 0.003
+      },
+      "latency_sec": 73.03,
+      "answer_preview": "Based on the provided SOP evidence, the specific hull volumetric datum envelope tolerance is not explicitly detailed in the retrieved documentation.\n\nThe evidence provided outlines technical tracking and verification parameters for hull welding and other aspects, including:\n\n*   **Table 2.0 (Section 2.0.A):** This table specifies tolerances for various parameters such as:\n    *   6-DoF Master Hull Centreline: $\\pm 0.25 \\text{ mm}$ to master digit",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+          "revision": "Rev 5.0 [Version 2.0] | 30-Oct-2026",
+          "section": "2.0.A SHOP-FLOOR EXECUTION & IOT METROLOGY DIRECTIVES (VER 2.0)",
+          "page": 3
+        },
+        {
+          "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+          "revision": "Rev 5.0 [Version 2.0] | 30-Oct-2026",
+          "section": "1.0.A SHOP-FLOOR EXECUTION & IOT METROLOGY DIRECTIVES (VER 2.0)",
+          "page": 2
+        },
+        {
+          "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+          "revision": "Rev 5.0 [Version 2.0] | 30-Oct-2026",
+          "section": "5.0.A SHOP-FLOOR EXECUTION & IOT METROLOGY DIRECTIVES (VER 2.0)",
+          "page": 6
+        }
+      ]
+    },
+    {
+      "id": "B15",
+      "category": "technical_specification",
+      "question": "What is the thermal shaft offset tolerance in Engine Alignment V2?",
+      "revision_mode": "V2 Only (Latest Revision)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "TECHNICAL_SPECIFICATION",
+      "predicted_intent": "TECHNICAL_SPECIFICATION",
+      "intent_match": true,
+      "expect_abstention": false,
+      "did_abstain": false,
+      "abstention_correct": null,
+      "fact_coverage": 1.0,
+      "prohibited_hits": [],
+      "answer_correct": true,
+      "retrieval_precision_at_k": 1.0,
+      "retrieval_recall_at_k": 1.0,
+      "citation_correct": true,
+      "citation_breakdown": {
+        "doc_match": true,
+        "rev_match": true,
+        "section_match": true,
+        "page_match": true
+      },
+      "faithful": true,
+      "has_hallucination": false,
+      "automated_quality_estimate": 79.1,
+      "automated_warning_label": "HIGH EVIDENCE SUPPORT",
+      "stage_timings_sec": {
+        "connectivity": 0.044,
+        "retrieval": 0.737,
+        "generation": 38.254,
+        "evaluation": 0.02,
+        "scoring": 0.0
+      },
+      "latency_sec": 39.06,
+      "answer_preview": "*   **Cold offset targeting:** +0.10 mm vertical rise [HVF_SOP_3_Engine_Alignment_v2.pdf, Rev 6.0 [Version 2.0], SECTION 1.0 \u2014 REAR ENGINE BAY METROLO..., Page 1-2].\n*   **Running offset:** $\\le 0.035$ mm [HVF_SOP_3_Engine_Alignment_v2.pdf, Rev 6.0 [Version 2.0], SECTION 1.0 \u2014 REAR ENGINE BAY METROLO..., Page 1-2].",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+          "revision": "Rev 6.0 [Version 2.0] | 30-Oct-2026",
+          "section": "SECTION 3.0 \u2014 WIRELESS MULTI-SENSOR DUAL-LASER SHAFT ALIGNMENT &",
+          "page": "3-4"
+        },
+        {
+          "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+          "revision": "Rev 6.0 [Version 2.0] | 30-Oct-2026",
+          "section": "SECTION 1.0 \u2014 REAR ENGINE BAY METROLOGY, HYDROMOUNT DAMPING &",
+          "page": "1-2"
+        },
+        {
+          "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+          "revision": "Rev 6.0 [Version 2.0] | 30-Oct-2026",
+          "section": "2.0.A SHOP-FLOOR EXECUTION & IOT METROLOGY DIRECTIVES (VER 2.0)",
+          "page": 3
+        }
+      ]
+    },
+    {
+      "id": "B16",
+      "category": "technical_specification",
+      "question": "What is the recuperator nitrogen pre-charge pressure and artificial recoil stroke in Gun Calibration V1?",
+      "revision_mode": "V1 Only (Baseline Archive)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "TECHNICAL_SPECIFICATION",
+      "predicted_intent": "GENERAL_PROCEDURAL",
+      "intent_match": false,
+      "expect_abstention": false,
+      "did_abstain": true,
+      "abstention_correct": null,
+      "fact_coverage": 0.0,
+      "prohibited_hits": [],
+      "answer_correct": false,
+      "retrieval_precision_at_k": 1.0,
+      "retrieval_recall_at_k": 1.0,
+      "citation_correct": false,
+      "citation_breakdown": {
+        "doc_match": true,
+        "rev_match": true,
+        "section_match": false,
+        "page_match": true
+      },
+      "faithful": true,
+      "has_hallucination": false,
+      "automated_quality_estimate": 87.4,
+      "automated_warning_label": "HIGH EVIDENCE SUPPORT",
+      "stage_timings_sec": {
+        "connectivity": 0.02,
+        "retrieval": 0.592,
+        "generation": 38.333,
+        "evaluation": 0.026,
+        "scoring": 0.0
+      },
+      "latency_sec": 38.97,
+      "answer_preview": "Based on the provided SOP evidence, the following information regarding the recuperator nitrogen pre-charge pressure and artificial recoil stroke is available:\n\n*   **Charging Procedure:** The hydraulic recoil buffer and hydro-pneumatic recuperator cylinders are charged with dry nitrogen [HVF\\_SOP\\_5\\_Gun\\_Calibration.pdf, Rev 4.6 (2026), SECTION 3.0 \u2014 HYDRO-PNEUMATIC RECUPER...].\n*   **Testing:** The cylinders are tested using the hydraulic pull",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_5_Gun_Calibration.pdf",
+          "revision": "Rev 4.6 (2026) | 30-Oct-2026",
+          "section": "SECTION 3.0 \u2014 HYDRO-PNEUMATIC RECUPERATOR & HYDRAULIC RECOIL BUFFER",
+          "page": "3-4"
+        },
+        {
+          "filename": "HVF_SOP_5_Gun_Calibration.pdf",
+          "revision": "Rev 4.6 (2026) | 30-Oct-2026",
+          "section": "SECTION 5.0 \u2014 MUZZLE REFERENCE SYSTEM (MRS) MIRROR ZEROING &",
+          "page": "5-6"
+        },
+        {
+          "filename": "HVF_SOP_5_Gun_Calibration.pdf",
+          "revision": "Rev 4.6 (2026) | 30-Oct-2026",
+          "section": "0.2 EXECUTIVE SUMMARY & OPERATIONAL MANDATE",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "id": "B17",
+      "category": "procedural",
+      "question": "What are the main steps in the engine alignment procedure?",
+      "revision_mode": "All Revisions (Default)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "GENERAL_PROCEDURAL",
+      "predicted_intent": "GENERAL_PROCEDURAL",
+      "intent_match": true,
+      "expect_abstention": false,
+      "did_abstain": false,
+      "abstention_correct": null,
+      "fact_coverage": 0.667,
+      "prohibited_hits": [],
+      "answer_correct": true,
+      "retrieval_precision_at_k": 1.0,
+      "retrieval_recall_at_k": 0.5,
+      "citation_correct": true,
+      "citation_breakdown": {
+        "doc_match": true,
+        "rev_match": true,
+        "section_match": true,
+        "page_match": true
+      },
+      "faithful": true,
+      "has_hallucination": false,
+      "automated_quality_estimate": 88.2,
+      "automated_warning_label": "HIGH EVIDENCE SUPPORT",
+      "stage_timings_sec": {
+        "connectivity": 0.026,
+        "retrieval": 0.597,
+        "generation": 41.374,
+        "evaluation": 0.045,
+        "scoring": 0.001
+      },
+      "latency_sec": 42.04,
+      "answer_preview": "The main steps in the engine alignment procedure, as detailed in the provided SOP evidence, involve wireless multi-sensor dual-laser shaft alignment and verification of various system parameters.\n\n**Wireless Multi-Sensor Dual-Laser Shaft Alignment & Thermal Compensation (Section 3.0):**\n*   Continuous wireless dual-laser sensors measure the radial and angular offset between the engine flywheel output and the transmission input torque converter [H",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+          "revision": "Rev 6.0 [Version 2.0] | 30-Oct-2026",
+          "section": "SECTION 3.0 \u2014 WIRELESS MULTI-SENSOR DUAL-LASER SHAFT ALIGNMENT &",
+          "page": "3-4"
+        },
+        {
+          "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+          "revision": "Rev 6.0 [Version 2.0] | 30-Oct-2026",
+          "section": "SECTION 1.0 \u2014 REAR ENGINE BAY METROLOGY, HYDROMOUNT DAMPING &",
+          "page": "1-2"
+        },
+        {
+          "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+          "revision": "Rev 6.0 [Version 2.0] | 30-Oct-2026",
+          "section": "SECTION 2.0 \u2014 POWERPACK HOISTING, 3D GUIDED LOWERING & HYDRAULIC",
+          "page": "2-3"
+        }
+      ]
+    },
+    {
+      "id": "B18",
+      "category": "procedural",
+      "question": "How is the main gun barrel installed into the turret cradle and breech block?",
+      "revision_mode": "All Revisions (Default)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "GENERAL_PROCEDURAL",
+      "predicted_intent": "GENERAL_PROCEDURAL",
+      "intent_match": true,
+      "expect_abstention": false,
+      "did_abstain": false,
+      "abstention_correct": null,
+      "fact_coverage": 0.5,
+      "prohibited_hits": [],
+      "answer_correct": false,
+      "retrieval_precision_at_k": 0.0,
+      "retrieval_recall_at_k": 0.0,
+      "citation_correct": false,
+      "citation_breakdown": {
+        "doc_match": false,
+        "rev_match": false,
+        "section_match": false,
+        "page_match": false
+      },
+      "faithful": false,
+      "has_hallucination": true,
+      "automated_quality_estimate": 64.0,
+      "automated_warning_label": "UNSUPPORTED CLAIMS DETECTED",
+      "stage_timings_sec": {
+        "connectivity": 0.03,
+        "retrieval": 0.521,
+        "generation": 54.198,
+        "evaluation": 0.045,
+        "scoring": 0.0
+      },
+      "latency_sec": 54.79,
+      "answer_preview": "The provided SOP evidence does not contain specific information detailing how the main gun barrel is installed into the turret cradle and breech block.\n\nThe evidence focuses on:\n*   Upgraded turret features such as sub-micron laser plinth mapping, high-load ceramic-hybrid bearing ball integration, and dual-pinion anti-backlash electric traverse actuators [HVF_SOP_2_Turret_Integration_v2.pdf, Rev 4.5 [Version 2.0], 0.2 EXECUTIVE SUMMARY & VERSION ",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
+          "revision": "Rev 4.5 [Version 2.0] | 30-Oct-2026",
+          "section": "0.2 EXECUTIVE SUMMARY & VERSION 2 OPERATIONAL MANDATE",
+          "page": 1
+        },
+        {
+          "filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
+          "revision": "Rev 4.5 [Version 2.0] | 30-Oct-2026",
+          "section": "SECTION 4.0 \u2014 AUTOMATED CRANE DOCKING, ACTIVE FORCE FEEDBACK &",
+          "page": "4-5"
+        },
+        {
+          "filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
+          "revision": "Rev 4.5 [Version 2.0] | 30-Oct-2026",
+          "section": "SECTION 6.0 \u2014 DYNAMIC 3-AXIS SHAKE RIG TESTING, GYRO DRIFT & FINAL",
+          "page": "6-7"
+        },
+        {
+          "filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
+          "revision": "Rev 4.5 [Version 2.0] | 30-Oct-2026",
+          "section": "SECTION 3.0 \u2014 DUAL-PINION ANTI-BACKLASH GEARBOX MESHING & TOOTH",
+          "page": "3-4"
+        }
+      ]
+    },
+    {
+      "id": "B19",
+      "category": "procedural",
+      "question": "What surface cleaning and pre-fitup checks are performed on RHA plates before hull welding?",
+      "revision_mode": "V1 Only (Baseline Archive)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "GENERAL_PROCEDURAL",
+      "predicted_intent": "GENERAL_PROCEDURAL",
+      "intent_match": true,
+      "expect_abstention": false,
+      "did_abstain": false,
+      "abstention_correct": null,
+      "fact_coverage": 0.667,
+      "prohibited_hits": [],
+      "answer_correct": true,
+      "retrieval_precision_at_k": 1.0,
+      "retrieval_recall_at_k": 1.0,
+      "citation_correct": true,
+      "citation_breakdown": {
+        "doc_match": true,
+        "rev_match": true,
+        "section_match": true,
+        "page_match": true
+      },
+      "faithful": true,
+      "has_hallucination": false,
+      "automated_quality_estimate": 94.9,
+      "automated_warning_label": "HIGH EVIDENCE SUPPORT",
+      "stage_timings_sec": {
+        "connectivity": 0.017,
+        "retrieval": 0.546,
+        "generation": 65.197,
+        "evaluation": 0.062,
+        "scoring": 0.0
+      },
+      "latency_sec": 65.82,
+      "answer_preview": "The surface cleaning and pre-fitup checks performed on RHA plates before hull welding are detailed in Table 1.0 of the Technical Tracking & QA Verification Matrix [HVF_SOP_1_Hull_Welding.pdf, Rev 4.2 (2026), 1.0.A SHOP-FLOOR EXECUTION & METROLOGY VERIFICATION DIRECTIVES, Page 2].\n\nThe specific check related to moisture and oxide clearance is:\n\n*   **Check:** Moisture & Oxide Clearance [HVF_SOP_1_Hull_Welding.pdf, Rev 4.2 (2026), 1.0.A SHOP-FLOOR ",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_1_Hull_Welding.pdf",
+          "revision": "Rev 4.2 (2026) | 30-Oct-2026",
+          "section": "1.0.A SHOP-FLOOR EXECUTION & METROLOGY VERIFICATION DIRECTIVES",
+          "page": 2
+        },
+        {
+          "filename": "HVF_SOP_1_Hull_Welding.pdf",
+          "revision": "Rev 4.2 (2026) | 30-Oct-2026",
+          "section": "SECTION 4.0 \u2014 MULTI-PASS PULSE-GMAW & ROBOTIC SUBMERGED ARC WELDING",
+          "page": "4-5"
+        },
+        {
+          "filename": "HVF_SOP_1_Hull_Welding.pdf",
+          "revision": "Rev 4.2 (2026) | 30-Oct-2026",
+          "section": "2.0.A SHOP-FLOOR EXECUTION & METROLOGY VERIFICATION DIRECTIVES",
+          "page": 3
+        }
+      ]
+    },
+    {
+      "id": "B20",
+      "category": "revision_comparison",
+      "question": "What changed between V1 and V2 of the turret integration SOP?",
+      "revision_mode": "All Revisions (Default)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "REVISION_CHANGES",
+      "predicted_intent": "REVISION_CHANGES",
+      "intent_match": true,
+      "expect_abstention": false,
+      "did_abstain": false,
+      "abstention_correct": null,
+      "fact_coverage": 0.333,
+      "prohibited_hits": [],
+      "answer_correct": false,
+      "retrieval_precision_at_k": 0.818,
+      "retrieval_recall_at_k": 0.5,
+      "citation_correct": true,
+      "citation_breakdown": {
+        "doc_match": true,
+        "rev_match": true,
+        "section_match": true,
+        "page_match": true
+      },
+      "faithful": true,
+      "has_hallucination": false,
+      "automated_quality_estimate": 77.4,
+      "automated_warning_label": "PARTIAL EVIDENCE",
+      "stage_timings_sec": {
+        "connectivity": 0.021,
+        "retrieval": 1.44,
+        "generation": 132.733,
+        "evaluation": 0.268,
+        "scoring": 0.002
+      },
+      "latency_sec": 134.46,
+      "answer_preview": "Here is the explanation regarding the changes between Version 1.0 and Version 2.0 of the Turret Integration SOP, based strictly on the provided evidence:\n\n1. **Overview:** Version 2.0 of the Turret Integration SOP introduces several key enhancements, including upgraded sub-micron laser plinth mapping, high-load ceramic-hybrid bearing ball integration, dual-pinion anti-backlash electric traverse actuators, and contactless optical rotary slip-rings",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
+          "revision": "Rev 4.5 [Version 2.0]",
+          "section": "SECTION 2.0 \u2014 CERAMIC-HYBRID CROSS-ROLLER BEARING ASSEMBLY &",
+          "page": 3
+        },
+        {
+          "filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
+          "revision": "Rev 4.5 [Version 2.0]",
+          "section": "SECTION 2.0 \u2014 CERAMIC-HYBRID CROSS-ROLLER BEARING ASSEMBLY &",
+          "page": 3
+        },
+        {
+          "filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
+          "revision": "Rev 4.5 [Version 2.0]",
+          "section": "SECTION 2.0 \u2014 CERAMIC-HYBRID CROSS-ROLLER BEARING ASSEMBLY &",
+          "page": 3
+        },
+        {
+          "filename": "HVF_SOP_4_Torsion_Suspension_v2.pdf",
+          "revision": "Rev 5.2 [Version 2.0]",
+          "section": "SECTION 2.0 \u2014 BALANCER ARM NEEDLE BEARING HOUSINGS & TRIPLE-LIP",
+          "page": 3
+        },
+        {
+          "filename": "HVF_SOP_4_Torsion_Suspension_v2.pdf",
+          "revision": "Rev 5.2 [Version 2.0]",
+          "section": "SECTION 2.0 \u2014 BALANCER ARM NEEDLE BEARING HOUSINGS & TRIPLE-LIP",
+          "page": 3
+        }
+      ]
+    },
+    {
+      "id": "B21",
+      "category": "revision_comparison",
+      "question": "What changed in Hull Welding between V1 (Rev 4.2) and V2 (Rev 5.0)?",
+      "revision_mode": "All Revisions (Default)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "TIMEOUT",
+      "failed_stage": "[4/6] Generating answer",
+      "error_message": "Text generation timed out after 150.0s with model 'gemma-2b:latest': timed out",
+      "expected_intent": "REVISION_CHANGES",
+      "predicted_intent": null,
+      "intent_match": false,
+      "expect_abstention": false,
+      "did_abstain": false,
+      "abstention_correct": null,
+      "fact_coverage": 0.0,
+      "prohibited_hits": [],
+      "answer_correct": false,
+      "retrieval_precision_at_k": null,
+      "retrieval_recall_at_k": null,
+      "citation_correct": null,
+      "citation_breakdown": {},
+      "faithful": false,
+      "has_hallucination": false,
+      "automated_quality_estimate": null,
+      "automated_warning_label": null,
+      "stage_timings_sec": {
+        "connectivity": 0.082,
+        "retrieval": 1.772
+      },
+      "latency_sec": 155.2,
+      "answer_preview": ""
+    },
+    {
+      "id": "B22",
+      "category": "revision_comparison",
+      "question": "How did Torsion Suspension tolerances change from V1 (Rev 4.0) to V2 (Rev 5.2)?",
+      "revision_mode": "All Revisions (Default)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "TIMEOUT",
+      "failed_stage": "[4/6] Generating answer",
+      "error_message": "Text generation timed out after 150.0s with model 'gemma-2b:latest': timed out",
+      "expected_intent": "REVISION_CHANGES",
+      "predicted_intent": null,
+      "intent_match": false,
+      "expect_abstention": false,
+      "did_abstain": false,
+      "abstention_correct": null,
+      "fact_coverage": 0.0,
+      "prohibited_hits": [],
+      "answer_correct": false,
+      "retrieval_precision_at_k": null,
+      "retrieval_recall_at_k": null,
+      "citation_correct": null,
+      "citation_breakdown": {},
+      "faithful": false,
+      "has_hallucination": false,
+      "automated_quality_estimate": null,
+      "automated_warning_label": null,
+      "stage_timings_sec": {
+        "connectivity": 0.052,
+        "retrieval": 0.845
+      },
+      "latency_sec": 153.32,
+      "answer_preview": ""
+    },
+    {
+      "id": "B23",
+      "category": "cross_document_impact",
+      "question": "How do hull welding datum tolerances affect turret integration?",
+      "revision_mode": "All Revisions (Default)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "COMPONENT_RELATIONSHIPS",
+      "predicted_intent": "TECHNICAL_SPECIFICATION",
+      "intent_match": false,
+      "expect_abstention": false,
+      "did_abstain": false,
+      "abstention_correct": null,
+      "fact_coverage": 0.667,
+      "prohibited_hits": [],
+      "answer_correct": true,
+      "retrieval_precision_at_k": 0.0,
+      "retrieval_recall_at_k": 0.0,
+      "citation_correct": false,
+      "citation_breakdown": {
+        "doc_match": false,
+        "rev_match": false,
+        "section_match": false,
+        "page_match": false
+      },
+      "faithful": true,
+      "has_hallucination": false,
+      "automated_quality_estimate": 88.2,
+      "automated_warning_label": "HIGH EVIDENCE SUPPORT",
+      "stage_timings_sec": {
+        "connectivity": 0.085,
+        "retrieval": 0.878,
+        "generation": 51.075,
+        "evaluation": 0.223,
+        "scoring": 0.002
+      },
+      "latency_sec": 52.26,
+      "answer_preview": "The provided SOP evidence details technical tracking and verification parameters for hull welding and assembly operations, but it does not contain specific information detailing how hull welding datum tolerances directly affect turret integration [HVF_SOP_1_Hull_Welding_v2.pdf, Rev 5.0 [Version 2.0]].\n\nHowever, the evidence specifies several critical tolerances and verification points related to hull construction and assembly:\n\n**Version 2 Techni",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+          "revision": "Rev 5.0 [Version 2.0] | 30-Oct-2026",
+          "section": "2.0.A SHOP-FLOOR EXECUTION & IOT METROLOGY DIRECTIVES (VER 2.0)",
+          "page": 3
+        },
+        {
+          "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+          "revision": "Rev 5.0 [Version 2.0] | 30-Oct-2026",
+          "section": "1.0.A SHOP-FLOOR EXECUTION & IOT METROLOGY DIRECTIVES (VER 2.0)",
+          "page": 2
+        },
+        {
+          "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+          "revision": "Rev 5.0 [Version 2.0] | 30-Oct-2026",
+          "section": "SECTION 4.0 \u2014 SYNCHRONIZED TWIN-WIRE TANDEM GMAW & VISION",
+          "page": "4-5"
+        }
+      ]
+    },
+    {
+      "id": "B24",
+      "category": "cross_document_impact",
+      "question": "How does main gun trunnion alignment relate to turret integration and optical slip-rings?",
+      "revision_mode": "All Revisions (Default)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "COMPONENT_RELATIONSHIPS",
+      "predicted_intent": "GENERAL_PROCEDURAL",
+      "intent_match": false,
+      "expect_abstention": false,
+      "did_abstain": false,
+      "abstention_correct": null,
+      "fact_coverage": 1.0,
+      "prohibited_hits": [],
+      "answer_correct": true,
+      "retrieval_precision_at_k": 0.0,
+      "retrieval_recall_at_k": 0.0,
+      "citation_correct": false,
+      "citation_breakdown": {
+        "doc_match": false,
+        "rev_match": false,
+        "section_match": false,
+        "page_match": true
+      },
+      "faithful": false,
+      "has_hallucination": false,
+      "automated_quality_estimate": 63.8,
+      "automated_warning_label": "PARTIAL EVIDENCE",
+      "stage_timings_sec": {
+        "connectivity": 0.072,
+        "retrieval": 0.813,
+        "generation": 35.216,
+        "evaluation": 0.027,
+        "scoring": 0.0
+      },
+      "latency_sec": 36.13,
+      "answer_preview": "Based on the provided SOP evidence, there is no information available regarding how the main gun trunnion alignment relates to turret integration and optical slip-rings [HVF_SOP_3_Engine_Alignment_v2.pdf, Rev 6.0 [Version 2.0]].",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+          "revision": "Rev 6.0 [Version 2.0] | 30-Oct-2026",
+          "section": "SECTION 3.0 \u2014 WIRELESS MULTI-SENSOR DUAL-LASER SHAFT ALIGNMENT &",
+          "page": "3-4"
+        },
+        {
+          "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+          "revision": "Rev 6.0 [Version 2.0] | 30-Oct-2026",
+          "section": "SECTION 2.0 \u2014 POWERPACK HOISTING, 3D GUIDED LOWERING & HYDRAULIC",
+          "page": "2-3"
+        },
+        {
+          "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+          "revision": "Rev 6.0 [Version 2.0] | 30-Oct-2026",
+          "section": "SECTION 1.0 \u2014 REAR ENGINE BAY METROLOGY, HYDROMOUNT DAMPING &",
+          "page": "1-2"
+        }
+      ]
+    },
+    {
+      "id": "B25",
+      "category": "insufficient_evidence",
+      "question": "What are the ceramic-hybrid bearing specifications in V1 Turret Integration?",
+      "revision_mode": "V1 Only (Baseline Archive)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "TECHNICAL_SPECIFICATION",
+      "predicted_intent": "GENERAL_PROCEDURAL",
+      "intent_match": false,
+      "expect_abstention": true,
+      "did_abstain": false,
+      "abstention_correct": false,
+      "fact_coverage": 0.5,
+      "prohibited_hits": [],
+      "answer_correct": false,
+      "retrieval_precision_at_k": 1.0,
+      "retrieval_recall_at_k": 1.0,
+      "citation_correct": true,
+      "citation_breakdown": {
+        "doc_match": true,
+        "rev_match": true,
+        "section_match": true,
+        "page_match": true
+      },
+      "faithful": false,
+      "has_hallucination": false,
+      "automated_quality_estimate": 72.0,
+      "automated_warning_label": "UNSUPPORTED CLAIMS DETECTED",
+      "stage_timings_sec": {
+        "connectivity": 0.051,
+        "retrieval": 0.88,
+        "generation": 50.504,
+        "evaluation": 0.083,
+        "scoring": 0.001
+      },
+      "latency_sec": 51.52,
+      "answer_preview": "Based on the provided SOP evidence, the following specifications regarding bearing components are found:\n\n**Bearing Specifications (Table 2.0):**\n\n*   **Bearing Ball Diameter Grading:** $\\pm 0.002 \\text{ mm}$ within matched lot [HVF\\_SOP\\_2\\_Turret\\_Integration.pdf, Rev 3.8 (2026), 2.0.A SHOP-FLOOR EXECUTION & METROLOGY VERIFICATION DIRECTIVES, Table 2.0, Step 2.1].\n*   **Raceway Case Hardness:** $58 \u2013 62 \\text{ HRC}$ (with a depth $\\geq 4.5 \\tex",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_2_Turret_Integration.pdf",
+          "revision": "Rev 3.8 (2026) | 30-Oct-2026",
+          "section": "SECTION 3.0 \u2014 INTERNAL RING GEAR MOUNTING, ECCENTRICITY & PINION",
+          "page": "3-4"
+        },
+        {
+          "filename": "HVF_SOP_2_Turret_Integration.pdf",
+          "revision": "Rev 3.8 (2026) | 30-Oct-2026",
+          "section": "2.0.A SHOP-FLOOR EXECUTION & METROLOGY VERIFICATION DIRECTIVES",
+          "page": 3
+        },
+        {
+          "filename": "HVF_SOP_2_Turret_Integration.pdf",
+          "revision": "Rev 3.8 (2026) | 30-Oct-2026",
+          "section": "4.0.A SHOP-FLOOR EXECUTION & METROLOGY VERIFICATION DIRECTIVES",
+          "page": 5
+        }
+      ]
+    },
+    {
+      "id": "B26",
+      "category": "insufficient_evidence",
+      "question": "What are the active hydromount tuning curves in Engine Alignment V1?",
+      "revision_mode": "V1 Only (Baseline Archive)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "TECHNICAL_SPECIFICATION",
+      "predicted_intent": "GENERAL_PROCEDURAL",
+      "intent_match": false,
+      "expect_abstention": true,
+      "did_abstain": true,
+      "abstention_correct": true,
+      "fact_coverage": 1.0,
+      "prohibited_hits": [],
+      "answer_correct": true,
+      "retrieval_precision_at_k": 1.0,
+      "retrieval_recall_at_k": 1.0,
+      "citation_correct": true,
+      "citation_breakdown": {
+        "doc_match": true,
+        "rev_match": true,
+        "section_match": true,
+        "page_match": true
+      },
+      "faithful": false,
+      "has_hallucination": false,
+      "automated_quality_estimate": 69.0,
+      "automated_warning_label": "UNSUPPORTED CLAIMS DETECTED",
+      "stage_timings_sec": {
+        "connectivity": 0.054,
+        "retrieval": 0.747,
+        "generation": 69.44,
+        "evaluation": 0.185,
+        "scoring": 0.001
+      },
+      "latency_sec": 70.43,
+      "answer_preview": "Based on the provided SOP evidence, the active hydromount tuning curves in Engine Alignment V1 are not specified.\n\nThe evidence details the following related aspects concerning engine alignment and mounting:\n\n*   **Shaft Coaxiality:**\n    *   Radial offset $\\le 0.05 \\text{ mm}$ [HVF\\_SOP\\_3\\_Engine\\_Alignment.pdf, Rev 5.1 (2026), SECTION 1.0 \u2014 ENGINE BAY HULL PEDESTAL INSPECTION & RESILIENT MOUNT, Page 1-2].\n    *   Angular misalignment $\\le 0.04",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_3_Engine_Alignment.pdf",
+          "revision": "Rev 5.1 (2026) | 30-Oct-2026",
+          "section": "SECTION 3.0 \u2014 DUAL-LASER CRANKSHAFT-TO-TRANSMISSION INPUT SHAFT",
+          "page": "3-4"
+        },
+        {
+          "filename": "HVF_SOP_3_Engine_Alignment.pdf",
+          "revision": "Rev 5.1 (2026) | 30-Oct-2026",
+          "section": "SECTION 2.0 \u2014 V12 POWERPACK HOISTING, TRUNNION LOWERING & SHIM PACK",
+          "page": "2-3"
+        },
+        {
+          "filename": "HVF_SOP_3_Engine_Alignment.pdf",
+          "revision": "Rev 5.1 (2026) | 30-Oct-2026",
+          "section": "SECTION 1.0 \u2014 ENGINE BAY HULL PEDESTAL INSPECTION & RESILIENT MOUNT",
+          "page": "1-2"
+        }
+      ]
+    },
+    {
+      "id": "B27",
+      "category": "insufficient_evidence",
+      "question": "What coupled thermal/pressure tolerance links engine bay bilge scavenge blowers to the hermetic turret NBC seal?",
+      "revision_mode": "All Revisions (Default)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "TECHNICAL_SPECIFICATION",
+      "predicted_intent": "TECHNICAL_SPECIFICATION",
+      "intent_match": true,
+      "expect_abstention": true,
+      "did_abstain": false,
+      "abstention_correct": false,
+      "fact_coverage": 0.5,
+      "prohibited_hits": [],
+      "answer_correct": false,
+      "retrieval_precision_at_k": null,
+      "retrieval_recall_at_k": null,
+      "citation_correct": null,
+      "citation_breakdown": {
+        "doc_match": null,
+        "rev_match": null,
+        "section_match": null,
+        "page_match": null
+      },
+      "faithful": false,
+      "has_hallucination": false,
+      "automated_quality_estimate": 71.6,
+      "automated_warning_label": "UNSUPPORTED CLAIMS DETECTED",
+      "stage_timings_sec": {
+        "connectivity": 0.047,
+        "retrieval": 1.261,
+        "generation": 53.719,
+        "evaluation": 0.124,
+        "scoring": 0.0
+      },
+      "latency_sec": 55.15,
+      "answer_preview": "Based on the provided SOP evidence, there is no information detailing a coupled thermal/pressure tolerance link between engine bay bilge scavenge blowers and the hermetic turret NBC seal.\n\nThe evidence provided covers the following related parameters:\n\n*   **Thermal Aerogel Shield Surface:** The outer shell must be $\\le 115^\\circ\\text{C}$ at full power [HVF\\_SOP\\_3\\_Engine\\_Alignment\\_v2.pdf, Rev 6.0 [Version 2.0], Table 5.0, Step 5.5].\n*   **Air",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+          "revision": "Rev 6.0 [Version 2.0] | 30-Oct-2026",
+          "section": "SECTION 1.0 \u2014 REAR ENGINE BAY METROLOGY, HYDROMOUNT DAMPING &",
+          "page": "1-2"
+        },
+        {
+          "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+          "revision": "Rev 6.0 [Version 2.0] | 30-Oct-2026",
+          "section": "5.0.A SHOP-FLOOR EXECUTION & IOT METROLOGY DIRECTIVES (VER 2.0)",
+          "page": 6
+        },
+        {
+          "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+          "revision": "Rev 6.0 [Version 2.0] | 30-Oct-2026",
+          "section": "SECTION 3.0 \u2014 WIRELESS MULTI-SENSOR DUAL-LASER SHAFT ALIGNMENT &",
+          "page": "3-4"
+        }
+      ]
+    },
+    {
+      "id": "B28",
+      "category": "abstention",
+      "question": "What is the radio frequency encryption key algorithm used in battle management communications?",
+      "revision_mode": "All Revisions (Default)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "TECHNICAL_SPECIFICATION",
+      "predicted_intent": "BASIC_DEFINITION",
+      "intent_match": false,
+      "expect_abstention": true,
+      "did_abstain": false,
+      "abstention_correct": false,
+      "fact_coverage": 0.0,
+      "prohibited_hits": [],
+      "answer_correct": false,
+      "retrieval_precision_at_k": null,
+      "retrieval_recall_at_k": null,
+      "citation_correct": null,
+      "citation_breakdown": {
+        "doc_match": null,
+        "rev_match": null,
+        "section_match": null,
+        "page_match": null
+      },
+      "faithful": false,
+      "has_hallucination": false,
+      "automated_quality_estimate": 49.6,
+      "automated_warning_label": "UNSUPPORTED CLAIMS DETECTED",
+      "stage_timings_sec": {
+        "connectivity": 0.08,
+        "retrieval": 1.595,
+        "generation": 87.887,
+        "evaluation": 0.079,
+        "scoring": 0.0
+      },
+      "latency_sec": 89.64,
+      "answer_preview": "1. Overview: The provided SOP evidence details aspects of engine alignment, powerpack testing, and thermal compensation related to the Heavy Vehicles Factory (HVF) production process for armoured vehicles [HVF_SOP_3_Engine_Alignment_v2.pdf, Rev 6.0 [Version 2.0]].\n\n2. Main Components / Assemblies:\n    *   **Resilient Rubber-Metal Mount** (PHYSICAL\\_COMPONENT): An elastomeric vibration dampening mount with bonded steel plates located beneath each ",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+          "revision": "Rev 6.0 [Version 2.0]",
+          "section": "SECTION 1.0 \u2014 ENGINE BAY HULL PEDESTAL INSPECTION & RESILIENT MOUNT",
+          "page": 2
+        },
+        {
+          "filename": "HVF_SOP_5_Gun_Calibration_v2.pdf",
+          "revision": "Rev 5.4 [Version 2.0]",
+          "section": "SECTION 4.0 \u2014 MULTI-SECTION THERMAL SHROUD FITMENT & BORE-EVACUATOR",
+          "page": 5
+        },
+        {
+          "filename": "HVF_SOP_5_Gun_Calibration_v2.pdf",
+          "revision": "Rev 5.4 [Version 2.0]",
+          "section": "SECTION 6.0 \u2014 FIRE CONTROL SYSTEM (FCS) TRI-BAND SIGHTING",
+          "page": 7
+        },
+        {
+          "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+          "revision": "Rev 6.0 [Version 2.0] | 30-Oct-2026",
+          "section": "SECTION 6.0 \u2014 DYNO HOT-FIRE TELEMETRY, 1500 HP POWER SIGN-OFF &",
+          "page": "6-7"
+        },
+        {
+          "filename": "HVF_SOP_3_Engine_Alignment_v2.pdf",
+          "revision": "Rev 6.0 [Version 2.0] | 30-Oct-2026",
+          "section": "SECTION 3.0 \u2014 WIRELESS MULTI-SENSOR DUAL-LASER SHAFT ALIGNMENT &",
+          "page": "3-4"
+        }
+      ]
+    },
+    {
+      "id": "B29",
+      "category": "abstention",
+      "question": "What is the radar cross-section signature target for stealth aircraft coatings?",
+      "revision_mode": "All Revisions (Default)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "TECHNICAL_SPECIFICATION",
+      "predicted_intent": "BASIC_DEFINITION",
+      "intent_match": false,
+      "expect_abstention": true,
+      "did_abstain": false,
+      "abstention_correct": false,
+      "fact_coverage": 0.0,
+      "prohibited_hits": [],
+      "answer_correct": false,
+      "retrieval_precision_at_k": null,
+      "retrieval_recall_at_k": null,
+      "citation_correct": null,
+      "citation_breakdown": {
+        "doc_match": null,
+        "rev_match": null,
+        "section_match": null,
+        "page_match": null
+      },
+      "faithful": false,
+      "has_hallucination": false,
+      "automated_quality_estimate": 50.6,
+      "automated_warning_label": "UNSUPPORTED CLAIMS DETECTED",
+      "stage_timings_sec": {
+        "connectivity": 0.02,
+        "retrieval": 0.594,
+        "generation": 124.264,
+        "evaluation": 0.158,
+        "scoring": 0.001
+      },
+      "latency_sec": 125.04,
+      "answer_preview": "1. Overview: The provided SOP evidence details various structural components, bearing assemblies, and gun calibration procedures for Heavy Vehicles Factory (HVF) vehicles, focusing on turret integration, suspension, and hull structure.\n\n2. Main Components / Assemblies:\n    *   **Cross-Roller Bearing Raceway** (ENTITY TYPE: ASSEMBLY) [HVF\\_SOP\\_2\\_Turret\\_Integration\\_v2.pdf, Rev 4.5 [Version 2.0], SECTION 2.0 \u2014 FOUR-POINT CONTACT BALL / CROSS-ROL",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
+          "revision": "Rev 4.5 [Version 2.0]",
+          "section": "SECTION 2.0 \u2014 FOUR-POINT CONTACT BALL / CROSS-ROLLER BEARING RACEWAY",
+          "page": 3
+        },
+        {
+          "filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
+          "revision": "Rev 4.5 [Version 2.0]",
+          "section": "SECTION 2.0 \u2014 CERAMIC-HYBRID CROSS-ROLLER BEARING ASSEMBLY &",
+          "page": 3
+        },
+        {
+          "filename": "HVF_SOP_4_Torsion_Suspension_v2.pdf",
+          "revision": "Rev 5.2 [Version 2.0]",
+          "section": "SECTION 1.0 \u2014 TORSION BAR METALLURGICAL STAMP AUDIT, SHOT-PEENING &",
+          "page": 2
+        },
+        {
+          "filename": "HVF_SOP_4_Torsion_Suspension_v2.pdf",
+          "revision": "Rev 5.2 [Version 2.0]",
+          "section": "SECTION 6.0 \u2014 DOUBLE-PIN TRACK LINK WRAPPING, TENSIONING & 5 KM",
+          "page": 7
+        },
+        {
+          "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+          "revision": "Rev 5.0 [Version 2.0]",
+          "section": "SECTION 1.0 \u2014 RHA PLATE RECEIVING, SPECTROGRAPHIC VERIFICATION & EDGE",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "id": "B30",
+      "category": "abstention",
+      "question": "What is the submarine sonar array calibration depth in meters?",
+      "revision_mode": "All Revisions (Default)",
+      "model_used": "gemma-2b:latest",
+      "execution_status": "COMPLETED",
+      "failed_stage": null,
+      "error_message": null,
+      "expected_intent": "TECHNICAL_SPECIFICATION",
+      "predicted_intent": "BASIC_DEFINITION",
+      "intent_match": false,
+      "expect_abstention": true,
+      "did_abstain": true,
+      "abstention_correct": true,
+      "fact_coverage": 0.5,
+      "prohibited_hits": [],
+      "answer_correct": true,
+      "retrieval_precision_at_k": null,
+      "retrieval_recall_at_k": null,
+      "citation_correct": null,
+      "citation_breakdown": {
+        "doc_match": null,
+        "rev_match": null,
+        "section_match": null,
+        "page_match": null
+      },
+      "faithful": false,
+      "has_hallucination": false,
+      "automated_quality_estimate": 56.0,
+      "automated_warning_label": "UNSUPPORTED CLAIMS DETECTED",
+      "stage_timings_sec": {
+        "connectivity": 0.033,
+        "retrieval": 0.669,
+        "generation": 80.152,
+        "evaluation": 0.047,
+        "scoring": 0.0
+      },
+      "latency_sec": 80.9,
+      "answer_preview": "1. Overview: The provided SOP evidence does not contain any information regarding a submarine sonar array calibration depth in meters.\n\n2. Main Components / Assemblies: No components related to a submarine sonar array calibration depth are documented in the provided SOP evidence.\n\n3. Component Functions: Since no information regarding a submarine sonar array calibration depth is present, the SOP does not specify the operational function of any su",
+      "citations_returned": [
+        {
+          "filename": "HVF_SOP_1_Hull_Welding_v2.pdf",
+          "revision": "Rev 5.0 [Version 2.0]",
+          "section": "SECTION 2.0 \u2014 ROBOTIC TURNOVER JIG LOCKING & DUAL-TRACKER 6-DOF",
+          "page": 3
+        },
+        {
+          "filename": "HVF_SOP_4_Torsion_Suspension_v2.pdf",
+          "revision": "Rev 5.2 [Version 2.0]",
+          "section": "SECTION 4.0 \u2014 HYDRAULIC ROTARY DAMPER CALIBRATION & ROAD-WHEEL HUB",
+          "page": 5
+        },
+        {
+          "filename": "HVF_SOP_4_Torsion_Suspension_v2.pdf",
+          "revision": "Rev 5.2 [Version 2.0]",
+          "section": "SECTION 4.0 \u2014 HYDRAULIC ROTARY DAMPER CALIBRATION & ROAD-WHEEL HUB",
+          "page": 5
+        },
+        {
+          "filename": "HVF_SOP_5_Gun_Calibration_v2.pdf",
+          "revision": "Rev 5.4 [Version 2.0]",
+          "section": "SECTION 6.0 \u2014 FIRE CONTROL SYSTEM (FCS) TRI-BAND SIGHTING",
+          "page": 7
+        },
+        {
+          "filename": "HVF_SOP_2_Turret_Integration_v2.pdf",
+          "revision": "Rev 4.5 [Version 2.0] | 30-Oct-2026",
+          "section": "4.0.A SHOP-FLOOR EXECUTION & IOT METROLOGY DIRECTIVES (VER 2.0)",
+          "page": 5
+        }
+      ]
+    }
+  ]
+}

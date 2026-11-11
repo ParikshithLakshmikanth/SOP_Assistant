@@ -320,6 +320,73 @@ class TestChatCancellationAndDefinitions(unittest.TestCase):
         self.assertIn("Engine-to-Transmission Alignment System", text)
         self.assertIn("HVF_SOP_3_Engine_Alignment.pdf", text)
 
+    def test_19_glossary_revisions_match_index_manifest(self):
+        """Every entry in component_glossary.json must cite authentic revisions matching index_manifest.json."""
+        import json
+        import re as regex_mod
+
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        glossary_path = os.path.join(base_dir, "data", "component_glossary.json")
+        manifest_path = os.path.join(base_dir, "data", "faiss_index", "index_manifest.json")
+
+        with open(glossary_path, "r", encoding="utf-8") as f:
+            glossary = json.load(f)
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            manifest = json.load(f)
+
+        revs_by_sop = {}
+        revs_by_file = {}
+        for doc in manifest["documents"]:
+            fn = doc["filename"]
+            logical = fn.replace("_v2.pdf", ".pdf")
+            rev_short = doc["revision"].split("(")[0].split("[")[0].strip()
+            revs_by_sop.setdefault(logical, []).append(rev_short)
+            revs_by_file[fn] = rev_short
+
+        for key, entry in glossary.items():
+            sop = entry["sop_filename"]
+            rev_str = entry["revision"]
+            logical_sop = sop.replace("_v2.pdf", ".pdf")
+            self.assertIn(sop, revs_by_file, f"Glossary entry '{key}' references unknown SOP '{sop}'")
+            expected_revs = [revs_by_file[sop]] if "_v2.pdf" in sop else revs_by_sop[logical_sop]
+            found_any = any(r in rev_str for r in expected_revs)
+            self.assertTrue(
+                found_any,
+                f"Glossary entry '{key}' for '{sop}' has revision '{rev_str}', expected {expected_revs}",
+            )
+            # Ensure V1 and V2 authentic revisions both appear if formatted as V1 / V2 pair for a baseline SOP file
+            if "_v2.pdf" not in sop and "(Revised / Active)" not in rev_str and "/" in rev_str:
+                for r in revs_by_sop[logical_sop]:
+                    self.assertIn(
+                        r,
+                        rev_str,
+                        f"Glossary entry '{key}' for '{sop}' missing authentic revision '{r}' in '{rev_str}'",
+                    )
+
+        # Explicitly guard SOP 2 (Rev 3.8 / 4.5), SOP 3 (Rev 5.1 / 6.0), SOP 4 (Rev 4.0 / 5.2) via live glossary lookup
+        tr = re_module.lookup_component_glossary("turret ring")
+        ea = re_module.lookup_component_glossary("engine alignment")
+        tb = re_module.lookup_component_glossary("torsion bar")
+        self.assertIsNotNone(tr)
+        self.assertIsNotNone(ea)
+        self.assertIsNotNone(tb)
+        self.assertIn("Rev 3.8", tr["revision"])
+        self.assertIn("Rev 4.5", tr["revision"])
+        self.assertIn("Rev 5.1", ea["revision"])
+        self.assertIn("Rev 6.0", ea["revision"])
+        self.assertIn("Rev 4.0", tb["revision"])
+        self.assertIn("Rev 5.2", tb["revision"])
+
+    def test_20_turret_ring_and_engine_alignment_cite_authentic_revisions(self):
+        """B02 & B03: Basic definition answers for turret ring & engine alignment must cite authentic SOP revisions."""
+        turret_ans = re_module.generate_rag_answer("What is the turret ring?", index_dir=self.index_dir)
+        self.assertIn("Rev 3.8", turret_ans["answer"])
+        self.assertIn("Rev 4.5", turret_ans["answer"])
+
+        engine_ans = re_module.generate_rag_answer("What is engine alignment?", index_dir=self.index_dir)
+        self.assertIn("Rev 5.1", engine_ans["answer"])
+        self.assertIn("Rev 6.0", engine_ans["answer"])
+
 
 if __name__ == "__main__":
     unittest.main()

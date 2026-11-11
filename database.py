@@ -105,16 +105,19 @@ def init_database(db_path: str = DEFAULT_DB_PATH) -> None:
                 timestamp TEXT NOT NULL,
                 sequence_number INTEGER NOT NULL,
                 timing_metadata TEXT NOT NULL DEFAULT '{}',
+                assessment_metadata TEXT NOT NULL DEFAULT '{}',
                 FOREIGN KEY (conversation_id) REFERENCES conversations(conversation_id) ON DELETE CASCADE
             );
         """)
 
-        # Migration: Ensure timing_metadata column exists on legacy databases
+        # Migration: Ensure timing_metadata and assessment_metadata columns exist on legacy databases
         cursor.execute("PRAGMA table_info(messages);")
         columns_info = cursor.fetchall()
         existing_cols = [c[1] if isinstance(c, (tuple, list)) else c["name"] for c in columns_info]
         if "timing_metadata" not in existing_cols:
             cursor.execute("ALTER TABLE messages ADD COLUMN timing_metadata TEXT NOT NULL DEFAULT '{}';")
+        if "assessment_metadata" not in existing_cols:
+            cursor.execute("ALTER TABLE messages ADD COLUMN assessment_metadata TEXT NOT NULL DEFAULT '{}';")
 
         # 3. Impact Reviews Table (Phase 8 Human Review Workflow)
         cursor.execute("""
@@ -347,6 +350,7 @@ def save_message(
     msg_id: Optional[str] = None,
     timestamp: Optional[str] = None,
     timing_metadata: Optional[Dict[str, Any]] = None,
+    assessment_metadata: Optional[Dict[str, Any]] = None,
     db_path: str = DEFAULT_DB_PATH
 ) -> Dict[str, Any]:
     """
@@ -362,6 +366,7 @@ def save_message(
         msg_id: Optional custom message ID; generates UUID4 if None.
         timestamp: Optional formatted timestamp; defaults to current time.
         timing_metadata: Optional dictionary of performance timestamps, latencies, and statuses.
+        assessment_metadata: Optional dictionary of RAG answer quality assessment metrics and claims.
         db_path: Path to database.
         
     Returns:
@@ -389,6 +394,8 @@ def save_message(
     cits_json = json.dumps(citations or [])
     timing_dict = timing_metadata or {}
     timing_json = json.dumps(timing_dict)
+    assessment_dict = assessment_metadata or {}
+    assessment_json = json.dumps(assessment_dict)
 
     with get_db(db_path) as conn:
         cursor = conn.cursor()
@@ -409,12 +416,12 @@ def save_message(
             """
             INSERT INTO messages (
                 message_id, conversation_id, role, content,
-                citations, is_cancelled, timestamp, sequence_number, timing_metadata
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+                citations, is_cancelled, timestamp, sequence_number, timing_metadata, assessment_metadata
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             """,
             (
                 m_id, clean_cid, clean_role, content or "",
-                cits_json, 1 if is_cancelled else 0, ts, next_seq, timing_json
+                cits_json, 1 if is_cancelled else 0, ts, next_seq, timing_json, assessment_json
             )
         )
 
@@ -434,8 +441,37 @@ def save_message(
         "is_cancelled": bool(is_cancelled),
         "timestamp": ts,
         "sequence_number": next_seq,
-        "timing_metadata": timing_dict
+        "timing_metadata": timing_dict,
+        "assessment_metadata": assessment_dict
     }
+
+
+def update_message_assessment(
+    message_id: str,
+    assessment_metadata: Dict[str, Any],
+    db_path: str = DEFAULT_DB_PATH
+) -> bool:
+    """
+    Attaches or updates RAG quality assessment metadata on an existing message
+    without altering its content, citations, or timestamps.
+    """
+    if not message_id or not str(message_id).strip():
+        return False
+
+    init_database(db_path)
+    assessment_json = json.dumps(assessment_metadata or {})
+    with get_db(db_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            UPDATE messages
+            SET assessment_metadata = ?
+            WHERE message_id = ?;
+            """,
+            (assessment_json, str(message_id).strip())
+        )
+        conn.commit()
+        return cursor.rowcount > 0
 
 
 def get_conversation_messages(
@@ -444,7 +480,7 @@ def get_conversation_messages(
 ) -> List[Dict[str, Any]]:
     """
     Retrieves all messages for a given conversation in strict chronological sequence.
-    Deserializes citations JSON back to structured list.
+    Deserializes citations, timing_metadata, and assessment_metadata JSON back to Python objects.
     
     Args:
         conversation_id: Target conversation ID.
@@ -456,12 +492,13 @@ def get_conversation_messages(
     if not conversation_id or not str(conversation_id).strip():
         return []
 
+    init_database(db_path)
     with get_db(db_path) as conn:
         cursor = conn.cursor()
         cursor.execute(
             """
             SELECT message_id, conversation_id, role, content,
-                   citations, is_cancelled, timestamp, sequence_number, timing_metadata
+                   citations, is_cancelled, timestamp, sequence_number, timing_metadata, assessment_metadata
             FROM messages
             WHERE conversation_id = ?
             ORDER BY sequence_number ASC;
@@ -484,6 +521,12 @@ def get_conversation_messages(
         except Exception:
             timing = {}
 
+        assess_raw = r["assessment_metadata"] if "assessment_metadata" in r.keys() else None
+        try:
+            assess = json.loads(assess_raw) if assess_raw else {}
+        except Exception:
+            assess = {}
+
         messages.append({
             "message_id": r["message_id"],
             "conversation_id": r["conversation_id"],
@@ -493,7 +536,8 @@ def get_conversation_messages(
             "is_cancelled": bool(r["is_cancelled"]),
             "timestamp": r["timestamp"],
             "sequence_number": r["sequence_number"],
-            "timing_metadata": timing
+            "timing_metadata": timing,
+            "assessment_metadata": assess
         })
 
     return messages

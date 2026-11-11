@@ -6,7 +6,7 @@
 
 ## 1. Quality Assurance Overview
 
-The HVF SOP Assistant undergoes automated regression testing across **12 dedicated test suites** comprising **138 discrete test assertions**. All tests execute locally on standard CPU hardware without external network dependencies.
+The HVF SOP Assistant undergoes automated regression testing across **13 dedicated test suites** comprising **158 discrete test assertions**, alongside a manually verified **30-question RAG accuracy benchmark** (`tests/rag_accuracy_benchmark.json`). All tests execute locally on standard CPU hardware without external network dependencies.
 
 ### Master Test Runner
 ```powershell
@@ -14,11 +14,11 @@ python tests/run_all_regression_tests.py
 ```
 
 ### Overall Regression Status
-- **Total Test Cases Executed**: 138
-- **Total Passed**: 138 (100.0%)
+- **Total Test Cases Executed**: 158
+- **Total Passed**: 158 (100.0%)
 - **Total Failed**: 0
 - **Total Errors**: 0
-- **Total Wall-Clock Execution Time**: ~60.1 seconds
+- **Total Wall-Clock Execution Time**: ~49.9 seconds
 
 ---
 
@@ -26,18 +26,19 @@ python tests/run_all_regression_tests.py
 
 | # | Test Suite | Module Under Test | Tests | Status | Key Verifications |
 | :- | :--- | :--- | :-: | :-: | :--- |
-| 1 | `tests/test_chat_timing.py` | `app.py`, `database.py` | 12 | PASS | High-precision `time.perf_counter()` duration metrics, first-token non-empty token latching, user submission timestamps, cancelled/failed state formatting, SQLite persistence, and legacy message tolerance. |
-| 2 | `tests/test_cancellation_and_definitions.py` | `app.py`, `rag_engine.py` | 18 | PASS | Immediate chat cancellation lifecycle, multi-generation race protection, sequential inquiries without page refresh, 6-part beginner component definitions. |
-| 3 | `tests/test_mini_phase6_reliability.py` | Full System | 10 | PASS | Dashboard stats sync, FAISS 150-chunk verification, 517 component metadata integrity, referenced component pill detection, compact citation grouping. |
-| 4 | `tests/test_integrated_experience.py` | `app.py`, `rag_engine.py` | 9 | PASS | Component Explorer to chatbot navigation, antecedent pronoun resolution, verified structural relationship linking, and context persistence. |
-| 5 | `tests/test_component_explorer.py` | `app.py` | 9 | PASS | Visual and tabular filtering across 517 components, entity taxonomy segregation, search responsiveness, and detail inspector layout. |
-| 6 | `tests/test_retrieval_fixes.py` | `rag_engine.py` | 8 | PASS | Procedural sequence retrieval, engine alignment shimming tolerances, hull structural assembly extraction, and strict revision isolation. |
-| 7 | `tests/test_component_rag.py` | `rag_engine.py` | 16 | PASS | Component intent detection (Overview, Function, Breakdown, Relationships), hybrid ranking, structured definitions, and evidence scoring. |
-| 8 | `tests/test_component_quality.py` | `document_processor.py` | 14 | PASS | Component extraction quality, stopword filtering, 10 entity taxonomy types, and structured relation verification. |
-| 9 | `tests/test_revision_preference.py` | `rag_engine.py`, `app.py` | 12 | PASS | Strict revision mode filtering (Baseline V1 Only, Revised V2 Only, All Revisions) across all domain queries. |
-| 10 | `tests/test_compact_evidence.py` | `app.py` | 7 | PASS | Citation deduplication, grouping by document and revision, max score aggregation, page range sorting. |
-| 11 | `tests/test_smooth_streaming.py` | `app.py`, `rag_engine.py` | 13 | PASS | Token generator yielding, accumulator smoothing, cancellation via stop flag, partial token preservation, and autoscroll integration. |
-| 12 | `tests/test_auto_scroll.py` | `app.py` | 10 | PASS | JavaScript-free CSS auto-scroll triggers, typing indicator animations, user upward scroll pause detection threshold, and clean database persistence. |
+| 1 | `tests/test_rag_evaluator.py` | `rag_evaluator.py`, `app.py`, `database.py` | 20 | PASS | Claim-level evidence verification, critical tolerance/material safety caps, malformed JSON/timeout/unavailable handling, SQLite `assessment_metadata` migration, historical fallback, and non-destructive cancellation. |
+| 2 | `tests/test_chat_timing.py` | `app.py`, `database.py` | 12 | PASS | High-precision `time.perf_counter()` duration metrics, first-token non-empty token latching, user submission timestamps, cancelled/failed state formatting, SQLite persistence, and legacy message tolerance. |
+| 3 | `tests/test_cancellation_and_definitions.py` | `app.py`, `rag_engine.py` | 18 | PASS | Immediate chat cancellation lifecycle, multi-generation race protection, sequential inquiries without page refresh, 6-part beginner component definitions. |
+| 4 | `tests/test_mini_phase6_reliability.py` | Full System | 10 | PASS | Dashboard stats sync, FAISS 150-chunk verification, 517 component metadata integrity, referenced component pill detection, compact citation grouping. |
+| 5 | `tests/test_integrated_experience.py` | `app.py`, `rag_engine.py` | 9 | PASS | Component Explorer to chatbot navigation, antecedent pronoun resolution, verified structural relationship linking, and context persistence. |
+| 6 | `tests/test_component_explorer.py` | `app.py` | 9 | PASS | Visual and tabular filtering across 517 components, entity taxonomy segregation, search responsiveness, and detail inspector layout. |
+| 7 | `tests/test_retrieval_fixes.py` | `rag_engine.py` | 8 | PASS | Procedural sequence retrieval, engine alignment shimming tolerances, hull structural assembly extraction, and strict revision isolation. |
+| 8 | `tests/test_component_rag.py` | `rag_engine.py` | 16 | PASS | Component intent detection (Overview, Function, Breakdown, Relationships), hybrid ranking, structured definitions, and evidence scoring. |
+| 9 | `tests/test_component_quality.py` | `document_processor.py` | 14 | PASS | Component extraction quality, stopword filtering, 10 entity taxonomy types, and structured relation verification. |
+| 10 | `tests/test_revision_preference.py` | `rag_engine.py`, `app.py` | 12 | PASS | Strict revision mode filtering (Baseline V1 Only, Revised V2 Only, All Revisions) across all domain queries. |
+| 11 | `tests/test_compact_evidence.py` | `app.py` | 7 | PASS | Citation deduplication, grouping by document and revision, max score aggregation, page range sorting. |
+| 12 | `tests/test_smooth_streaming.py` | `app.py`, `rag_engine.py` | 13 | PASS | Token generator yielding, accumulator smoothing, cancellation via stop flag, partial token preservation, and autoscroll integration. |
+| 13 | `tests/test_auto_scroll.py` | `app.py` | 10 | PASS | JavaScript-free CSS auto-scroll triggers, typing indicator animations, user upward scroll pause detection threshold, and clean database persistence. |
 
 ---
 

@@ -86,9 +86,9 @@ if (Test-Path $dbPath) {
 }
 
 # Launch Application
-Write-Host "`n==========================================================================" -ForegroundColor Cyan
-Write-Host " Starting Streamlit Application (app.py)..." -ForegroundColor Yellow
-Write-Host " Press Ctrl+C in this terminal window to stop the application." -ForegroundColor Gray
-Write-Host "==========================================================================" -ForegroundColor Cyan
+# Write-Host "`n==========================================================================" -ForegroundColor Cyan
+# Write-Host " Starting Streamlit Application (app.py)..." -ForegroundColor Yellow
+# Write-Host " Press Ctrl+C in this terminal window to stop the application." -ForegroundColor Gray
+# Write-Host "==========================================================================" -ForegroundColor Cyan
 
-streamlit run app.py
+# streamlit run app.py

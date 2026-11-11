@@ -6,7 +6,7 @@
 
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg)](file:///d:/Parikshith/SOP_Assistant)
 [![Offline Security](https://img.shields.io/badge/Air--Gap-100%25%20Offline-blue.svg)](file:///d:/Parikshith/SOP_Assistant/docs/SYSTEM_ARCHITECTURE.md)
-[![Tests](https://img.shields.io/badge/Regression%20Tests-138%2F138%20PASS-brightgreen.svg)](file:///d:/Parikshith/SOP_Assistant/docs/TESTING_AND_VALIDATION.md)
+[![Tests](https://img.shields.io/badge/Regression%20Tests-158%2F158%20PASS-brightgreen.svg)](file:///d:/Parikshith/SOP_Assistant/docs/TESTING_AND_VALIDATION.md)
 [![FAISS Vectors](https://img.shields.io/badge/FAISS%20Vectors-150-informational.svg)](file:///d:/Parikshith/SOP_Assistant/data/faiss_index/sop.index)
 [![Components](https://img.shields.io/badge/Structured%20Components-517-blueviolet.svg)](file:///d:/Parikshith/SOP_Assistant/data/faiss_index/components_metadata.json)
 
@@ -132,7 +132,12 @@ pip install -r requirements.txt
 ```powershell
 python tests/run_all_regression_tests.py
 ```
-*Expected: 138 / 138 tests PASS (100% OK).*
+*Expected: 158 / 158 tests PASS (100% OK).*
+
+To run the full manually verified 30-question RAG accuracy benchmark (with resumable checkpointing):
+```powershell
+python -u tests/run_rag_accuracy_benchmark.py --resume
+```
 
 #### 6. Start the Application
 ```powershell
@@ -170,6 +175,7 @@ Navigate to **"💬 Technical Consultation Chat"**.
     - *Failed*: `⏱️ Failed after: X.XXs`
   - **First-Token Detection**: Accurately measures first-token latency on the first non-empty token (`token.strip() != ""`), capturing cold start, vector retrieval, and initial prompt evaluation time without UI render skew.
   - **Persistent SQLite Audit**: Timing metadata is persisted in `messages.timing_metadata` JSON column, surviving restarts and page reloads while maintaining 100% backward compatibility with legacy message histories.
+- **Evidence-Based Answer Quality Assessment (`rag_evaluator.py`)**: Every assistant response features a collapsible **"Answer Quality Assessment"** expander below the response, displaying an automated weighted score (`Evidence Support` 40%, `Answer Relevance` 25%, `Completeness` 15%, `Citation Coverage` 10%, `Retrieval Quality` 10%), descriptive support label (`HIGH EVIDENCE SUPPORT`, `PARTIAL EVIDENCE`, `INSUFFICIENT EVIDENCE`, `UNSUPPORTED CLAIMS DETECTED`, `CONTRADICTORY EVIDENCE`, or `ASSESSMENT UNAVAILABLE`), critical technical claim checks (tolerances, dimensions, materials, calibration values), and claim-by-claim citation audit. Legacy messages display `"Not assessed — historical response."`.
 - Click **"Evidence Sources & Citations"** to inspect exact source passages, page numbers, and similarity scores.
 - Click any related component chip at the bottom of the answer to jump directly into the Component Explorer.
 
@@ -207,7 +213,8 @@ Detailed architectural and operational documentation is maintained in the [`docs
 - [`docs/SYSTEM_ARCHITECTURE.md`](file:///d:/Parikshith/SOP_Assistant/docs/SYSTEM_ARCHITECTURE.md): Complete architecture specification featuring 6 detailed Mermaid diagrams covering high-level architecture, ingestion pipelines, hybrid retrieval flows, component extraction gates, revision diffing, and persistence schemas.
 - [`docs/MODULE_GUIDE.md`](file:///d:/Parikshith/SOP_Assistant/docs/MODULE_GUIDE.md): Function-by-function reference guide for `app.py`, `rag_engine.py`, `document_processor.py`, `database.py`, and `sop_analyzer.py`.
 - [`docs/DATA_FLOW.md`](file:///d:/Parikshith/SOP_Assistant/docs/DATA_FLOW.md): Complete data contracts, JSON schemas, SQLite DDLs, and cross-module serialization contracts.
-- [`docs/TESTING_AND_VALIDATION.md`](file:///d:/Parikshith/SOP_Assistant/docs/TESTING_AND_VALIDATION.md): Full test matrix covering all 108 regression tests across 10 suites, air-gap socket tests, and real-question acceptance results (Q1–Q8).
+- [`docs/TESTING_AND_VALIDATION.md`](file:///d:/Parikshith/SOP_Assistant/docs/TESTING_AND_VALIDATION.md): Full test matrix covering all 158 regression tests across 13 suites, air-gap socket tests, and real-question acceptance results (Q1–Q8).
+- [`RAG_ACCURACY_AND_EVALUATION_REPORT.md`](file:///d:/Parikshith/SOP_Assistant/RAG_ACCURACY_AND_EVALUATION_REPORT.md): Empirical 30-question RAG accuracy benchmark results, evaluator architecture, failure/timeout analysis, and remaining risks.
 - [`docs/LOCAL_SETUP_GUIDE.md`](file:///d:/Parikshith/SOP_Assistant/docs/LOCAL_SETUP_GUIDE.md): Detailed Windows workstation setup guide with Ollama, Tesseract, troubleshooting, and configuration instructions.
 - [`docs/DEMO_GUIDE.md`](file:///d:/Parikshith/SOP_Assistant/docs/DEMO_GUIDE.md): 10–15 minute live demonstration sequence with 12 numbered steps, exact prompts, expected answers, and presenter talking points.
 - [`FINAL_PROJECT_REPORT.md`](file:///d:/Parikshith/SOP_Assistant/FINAL_PROJECT_REPORT.md): Formal engineering and academic project report detailing all 15 required sections, performance metrics, and evaluation findings.
